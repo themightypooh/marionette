@@ -1,5 +1,27 @@
 # Modeling tool — session handoff
 
+## Status, 2026-08-18
+
+**Phase one (parametric CAD) is done.** Primitives, feature tree, sketcher, bevel, shell, mirror,
+array, UV projection all work and are tested — 417 checks in `Effigy.Tests`. Boolean subtract is
+the one gap, deliberately deferred (see "Not here yet" in `Effigy/README.md`).
+
+**Phase two (bones) is next, and it does not wait on s&box.** Skeleton, auto-weighting
+(`SkinBinder`), and SMD export (`SmdWriter`) already exist in the kernel — what's missing is a
+`SkeletonFeature` in the feature tree and end-to-end tests proving a rigged model round-trips
+through rebuild/rebind/export. This is picked over sculpt (formerly phase two) because there's
+more hands-on experience with rigging than sculpting — see `Effigy/README.md`'s "Not here yet"
+for the reordered plan. Sculpt (Catmull-Clark exists; brushes and multires don't) is now phase
+three.
+
+**s&box editor integration (phase four) is a separate, parallel track — not a blocker for the
+above.** Its viability rests on two unanswered questions (open questions #1 and #2 below), which
+need a local machine with s&box installed; this repo is developed from a cloud container that
+can't reach `sbox.game` or run the editor. A PC is being set up for exactly this check. Until that
+comes back, phase four stays "unverified leads only" and phases two/three proceed regardless —
+OBJ (static) and SMD (rigged) export both work today independent of whatever s&box's own mesh
+tools turn out to support.
+
 A second s&box tool: **make a usable, rigged 3D model without leaving the editor**, the same thesis
 as Marionette applied to meshes instead of animation.
 
