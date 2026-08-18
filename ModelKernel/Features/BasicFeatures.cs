@@ -263,7 +263,15 @@ public sealed class SubdivideFeature : Feature
 	public readonly BodySelectionParam Bodies = new( "Bodies" );
 	public readonly IntParam Levels = new( "Levels", 1, 0, 6 );
 
-	public override IReadOnlyList<IParam> Parameters => new IParam[] { Bodies, Levels };
+	/// <summary>Off by default so an existing tree's behaviour never changes underneath it — this
+	/// is an opt-in fix, not a silent change to what Subdivide already did. See CreaseTools for
+	/// why a default cube needs this to stay a cube rather than becoming a ball.</summary>
+	public readonly BoolParam AutoCrease = new( "Preserve hard edges", false );
+	public readonly FloatParam CreaseAngle = new( "Crease angle", 30f, 0f, 180f, unit: "deg" );
+
+	public override IReadOnlyList<IParam> Parameters => AutoCrease.Value
+		? new IParam[] { Bodies, Levels, AutoCrease, CreaseAngle }
+		: new IParam[] { Bodies, Levels, AutoCrease };
 
 	/// <summary>What this feature will cost at the current settings, for a UI that warns before
 	/// rather than after. Levels are exponential and the jump from 4 to 6 is 16x.</summary>
@@ -288,6 +296,14 @@ public sealed class SubdivideFeature : Feature
 			return;
 
 		foreach ( var body in ctx.Bodies.Where( Bodies.Matches ) )
+		{
+			// Marking runs on the CAGE, before subdividing — the same order Blender's "mark
+			// sharp by angle" runs in, and the only order that makes sense: the angle between two
+			// adjacent faces is only meaningful on the coarse mesh that still has those faces.
+			if ( AutoCrease.Value )
+				CreaseTools.MarkSharpByAngle( body.Mesh, CreaseAngle.Clamped );
+
 			body.Mesh = CatmullClark.Subdivide( body.Mesh, Levels.Clamped );
+		}
 	}
 }

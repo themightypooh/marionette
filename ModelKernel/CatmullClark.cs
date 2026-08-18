@@ -19,6 +19,13 @@ namespace ModelKernel;
 ///
 /// Boundaries use the cubic B-spline curve rules, so an open mesh keeps its border instead of
 /// shrinking away from it.
+///
+/// EDGE CREASES USE THE SAME MACHINERY AS BOUNDARIES, DELIBERATELY. A boundary edge is really just
+/// a permanently, infinitely sharp edge — one face instead of two — and the crease rules below are
+/// written as a strict generalisation of the boundary rules that already existed: with no creases
+/// marked, every formula reduces to exactly the old boundary/smooth code path. This is why a mesh
+/// with an empty Creases dictionary behaves byte-for-byte as before, which the test suite checks
+/// directly rather than assuming.
 /// </summary>
 public static class CatmullClark
 {
@@ -81,23 +88,37 @@ public static class CatmullClark
 			var b = mesh.Positions[key.B];
 			var faces = edgeFaces[key];
 
+			// The sharp rule is always the plain midpoint — pulling toward an adjacent face point
+			// is exactly the smoothing this edge is meant to resist. A boundary edge (one face) is
+			// infinitely sharp by definition: there's no second face to pull it toward anyway, and
+			// treating it as anything else is the "my open mesh shrank" bug.
+			var sharpEdgePoint = (a + b) * 0.5f;
+
+			Vec3 smoothEdgePoint;
+
 			if ( faces.Count == 1 )
 			{
-				// Boundary edge: plain midpoint. Pulling it toward the single adjacent face point
-				// would drag the border inward, which is exactly the "my open mesh shrank" bug.
-				newPositions[vertCount + ei] = (a + b) * 0.5f;
-				continue;
+				smoothEdgePoint = sharpEdgePoint;
+			}
+			else
+			{
+				var faceSum = Vec3.Zero;
+
+				foreach ( var fi in faces )
+					faceSum += facePoints[fi];
+
+				// (v0 + v1 + average of adjacent face points) weighted as the standard 4-point
+				// rule. Written to average over faces.Count rather than assuming 2, so a
+				// non-manifold edge degrades to something sane instead of reading past the end.
+				smoothEdgePoint = (a + b + faceSum / faces.Count * 2f) * 0.25f;
 			}
 
-			var faceSum = Vec3.Zero;
+			var sharpness = EffectiveSharpness( mesh, key, faces );
+			var t = float.IsPositiveInfinity( sharpness ) ? 1f : Math.Clamp( sharpness, 0f, 1f );
 
-			foreach ( var fi in faces )
-				faceSum += facePoints[fi];
-
-			// (v0 + v1 + average of adjacent face points) weighted as the standard 4-point rule.
-			// Written to average over faces.Count rather than assuming 2, so a non-manifold edge
-			// degrades to something sane instead of reading past the end.
-			newPositions[vertCount + ei] = (a + b + faceSum / faces.Count * 2f) * 0.25f;
+			newPositions[vertCount + ei] = t >= 1f
+				? sharpEdgePoint
+				: Vec3.Lerp( smoothEdgePoint, sharpEdgePoint, t );
 		}
 
 		// --- updated original vertices -----------------------------------------------------
@@ -106,33 +127,9 @@ public static class CatmullClark
 			var v = mesh.Positions[vi];
 			var edges = vertexEdges[vi];
 
-			// Collect boundary edges at this vertex. A boundary vertex has exactly two; it follows
-			// the curve rule and ignores the surface entirely, which is what keeps a border crisp.
-			var boundaryNeighbours = new List<int>( 2 );
-
-			foreach ( var key in edges )
-			{
-				if ( edgeFaces[key].Count == 1 )
-					boundaryNeighbours.Add( key.A == vi ? key.B : key.A );
-			}
-
-			if ( boundaryNeighbours.Count == 2 )
-			{
-				// Cubic B-spline: (p_prev + 6v + p_next) / 8.
-				newPositions[vi] =
-					(mesh.Positions[boundaryNeighbours[0]]
-					 + v * 6f
-					 + mesh.Positions[boundaryNeighbours[1]]) / 8f;
-				continue;
-			}
-
-			if ( boundaryNeighbours.Count > 2 )
-			{
-				// A corner where several borders meet. Nothing sensible to interpolate, so pin it.
-				newPositions[vi] = v;
-				continue;
-			}
-
+			// The smooth rule is needed as a blend target even at a crease, so compute it first
+			// and unconditionally.
+			Vec3 smoothRule;
 			var faces = vertexFaces[vi];
 			var n = faces.Count;
 
@@ -140,29 +137,92 @@ public static class CatmullClark
 			{
 				// Valence 1 or 2 interior vertices are degenerate; the (n-3)/n term misbehaves.
 				// Pinning is the least surprising thing to do with them.
-				newPositions[vi] = v;
+				smoothRule = v;
+			}
+			else
+			{
+				// F: average of adjacent face points.
+				var f = Vec3.Zero;
+
+				foreach ( var fi in faces )
+					f += facePoints[fi];
+
+				f /= n;
+
+				// R: average of adjacent EDGE MIDPOINTS — not of the edge points computed above.
+				// This is the single most commonly mis-implemented line in Catmull-Clark, and
+				// using edge points here produces a surface that looks nearly right and shrinks
+				// slightly wrong.
+				var r = Vec3.Zero;
+
+				foreach ( var key in edges )
+					r += (mesh.Positions[key.A] + mesh.Positions[key.B]) * 0.5f;
+
+				r /= edges.Count;
+
+				smoothRule = (f + r * 2f + v * (n - 3)) / n;
+			}
+
+			// Sharp neighbours generalise "boundary neighbours": a boundary edge counts as
+			// infinitely sharp, so a plain boundary vertex (exactly two boundary edges) falls out
+			// of this as a special case rather than needing its own branch.
+			var sharpNeighbours = new List<(int Other, float Sharpness)>( 2 );
+
+			foreach ( var key in edges )
+			{
+				var edgeFacesHere = edgeFaces[key];
+				var sharpness = EffectiveSharpness( mesh, key, edgeFacesHere );
+
+				if ( sharpness > 0f )
+					sharpNeighbours.Add( (key.A == vi ? key.B : key.A, sharpness) );
+			}
+
+			if ( sharpNeighbours.Count <= 1 )
+			{
+				// Zero or one sharp edge touching this vertex isn't enough to define a crease
+				// curve through it, so the surface rule alone decides its position.
+				newPositions[vi] = smoothRule;
 				continue;
 			}
 
-			// F: average of adjacent face points.
-			var f = Vec3.Zero;
+			var infiniteCount = 0;
+			var finiteSum = 0f;
 
-			foreach ( var fi in faces )
-				f += facePoints[fi];
+			foreach ( var (_, s) in sharpNeighbours )
+			{
+				if ( float.IsPositiveInfinity( s ) ) infiniteCount++;
+				else finiteSum += s;
+			}
 
-			f /= n;
+			// A vertex is only as sharp as the softest edge feeding it — averaging the finite
+			// sharpnesses is what lets a partially-creased vertex settle between the two rules
+			// instead of snapping. Any infinitely sharp neighbour (including a boundary edge)
+			// forces full sharpness regardless of the others, the same way one hard edge at a
+			// corner pins it even if the rest are soft.
+			var blend = infiniteCount > 0
+				? 1f
+				: Math.Clamp( finiteSum / sharpNeighbours.Count, 0f, 1f );
 
-			// R: average of adjacent EDGE MIDPOINTS — not of the edge points computed above. This
-			// is the single most commonly mis-implemented line in Catmull-Clark, and using edge
-			// points here produces a surface that looks nearly right and shrinks slightly wrong.
-			var r = Vec3.Zero;
+			Vec3 sharpRule;
 
-			foreach ( var key in edges )
-				r += (mesh.Positions[key.A] + mesh.Positions[key.B]) * 0.5f;
+			if ( sharpNeighbours.Count == 2 )
+			{
+				// Crease rule: cubic B-spline running along the two sharp edges through this
+				// vertex — exactly the old boundary-curve formula, generalised to any pair of
+				// sharp edges rather than only a pair of boundary edges.
+				sharpRule = (mesh.Positions[sharpNeighbours[0].Other]
+					+ v * 6f
+					+ mesh.Positions[sharpNeighbours[1].Other]) / 8f;
+			}
+			else
+			{
+				// Three or more sharp edges converge here — a corner. There's no single curve to
+				// interpolate along, so the fully-sharp target is simply staying put, the same as
+				// the old "several borders meet" pin.
+				sharpRule = v;
+			}
 
-			r /= edges.Count;
-
-			newPositions[vi] = (f + r * 2f + v * (n - 3)) / n;
+			newPositions[vi] = blend >= 1f ? sharpRule : Vec3.Lerp( smoothRule, sharpRule, blend );
 		}
 
 		// --- new faces ---------------------------------------------------------------------
@@ -208,8 +268,42 @@ public static class CatmullClark
 			}
 		}
 
+		// --- propagate creases to the two child edges of every creased edge -----------------
+		//
+		// A creased edge splits into two child edges at this level — original-vertex to
+		// edge-point, on each side — and each inherits the crease, decayed by one. Sharpness 1
+		// decays to 0 and is dropped, so it reads as sharp for exactly one more level and smooth
+		// after that; infinite sharpness stays infinite forever. The other new edges this level
+		// produces — the four "spoke" edges from each face point out to its corners — are never
+		// creased, because nothing marked them.
+		//
+		// Boundary edges are deliberately absent from this loop: their sharpness is implicit
+		// (faces.Count == 1), and their child edges are boundary edges too, so they stay sharp
+		// automatically without an explicit dictionary entry.
+		foreach ( var (key, sharpness) in mesh.Creases )
+		{
+			if ( sharpness <= 0f || !edgeIndex.TryGetValue( key, out var ei ) )
+				continue;
+
+			var decayed = float.IsPositiveInfinity( sharpness ) ? sharpness : MathF.Max( sharpness - 1f, 0f );
+
+			if ( decayed <= 0f )
+				continue;
+
+			var edgePointIdx = vertCount + ei;
+			result.Creases[new EdgeKey( key.A, edgePointIdx )] = decayed;
+			result.Creases[new EdgeKey( key.B, edgePointIdx )] = decayed;
+		}
+
 		return result;
 	}
+
+	/// <summary>Sharpness this edge should use this level: infinite for a boundary (one adjacent
+	/// face), whatever was marked otherwise, zero by default.</summary>
+	static float EffectiveSharpness( PolyMesh mesh, EdgeKey key, List<int> faces ) =>
+		faces.Count == 1
+			? float.PositiveInfinity
+			: mesh.Creases.TryGetValue( key, out var s ) ? s : 0f;
 
 	/// <summary>
 	/// What Subdivide will cost, without running it. Cheap enough to call on every parameter change

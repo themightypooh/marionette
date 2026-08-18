@@ -74,12 +74,41 @@ public sealed class PolyMesh
 	public List<Vec3> Positions = new();
 	public List<Face> Faces = new();
 
+	/// <summary>
+	/// Per-edge crease sharpness. Absent means 0, which is fully smooth.
+	///
+	/// WITHOUT THESE, SUBDIVISION MELTS EVERY HARD EDGE. Catmull-Clark's limit surface for a cube
+	/// is a rounded blob — mathematically correct and useless for CAD, because the crispness the
+	/// parametric stage produced has to survive into the sculpt stage. A sharpness of 1 keeps an
+	/// edge for one level, 2 for two, and infinity keeps it forever. Fractional values blend, which
+	/// is what gives the tight-but-not-razor edge real hard-surface models want.
+	///
+	/// Boundary edges are treated as infinitely sharp automatically and are not stored here.
+	/// </summary>
+	public Dictionary<EdgeKey, float> Creases = new();
+
 	public PolyMesh() { }
 
 	public PolyMesh( IEnumerable<Vec3> positions, IEnumerable<Face> faces )
 	{
 		Positions = positions.ToList();
 		Faces = faces.ToList();
+	}
+
+	/// <summary>Crease an edge. Sharpness &lt;= 0 removes any existing crease rather than storing
+	/// a no-op zero, so the dictionary only ever holds edges that actually do something.</summary>
+	public void MarkSharp( EdgeKey key, float sharpness = float.PositiveInfinity )
+	{
+		if ( sharpness <= 0f )
+			Creases.Remove( key );
+		else
+			Creases[key] = sharpness;
+	}
+
+	public void MarkAllSharp( float sharpness = float.PositiveInfinity )
+	{
+		foreach ( var key in BuildEdgeFaces().Keys )
+			MarkSharp( key, sharpness );
 	}
 
 	public int VertexCount => Positions.Count;
@@ -238,7 +267,11 @@ public sealed class PolyMesh
 
 	public PolyMesh Clone()
 	{
-		var m = new PolyMesh { Positions = new List<Vec3>( Positions ) };
+		var m = new PolyMesh
+		{
+			Positions = new List<Vec3>( Positions ),
+			Creases = new Dictionary<EdgeKey, float>( Creases )
+		};
 
 		foreach ( var f in Faces )
 			m.Faces.Add( new Face( (int[])f.Indices.Clone(), (Vec2[])f.UVs.Clone(), f.Material ) );

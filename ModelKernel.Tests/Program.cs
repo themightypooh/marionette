@@ -60,6 +60,7 @@ public static class Program
 
 		FeatureTests.Run();
 		SketchTests.Run();
+		CreaseTests.Run();
 
 		Section( "writing sample OBJs" );
 		WriteSamples( outDir );
@@ -483,6 +484,51 @@ public static class Program
 		};
 
 		PngPreview.WriteSheet( subdivision, Path.Combine( outDir, "preview_subdivision.png" ) );
+
+		WriteCreaseComparison( outDir );
+	}
+
+	/// <summary>
+	/// The direct before/after for the crease fix — top row melts, bottom row doesn't. This is the
+	/// comparison that answers the previous round of previews, which showed a box rounding into a
+	/// ball and a cylinder cap puckering with nothing built yet to stop it.
+	/// </summary>
+	static void WriteCreaseComparison( string outDir )
+	{
+		var boxCage = Primitives.Box( 2, 2, 2 );
+		var boxNoCrease = CatmullClark.Subdivide( boxCage, 3 );
+
+		var boxCreased = boxCage.Clone();
+		boxCreased.MarkAllSharp();
+		var boxWithCrease = CatmullClark.Subdivide( boxCreased, 3 );
+
+		var cylCage = Primitives.Cylinder( 0.5f, 1f, 16 );
+		var cylNoCrease = CatmullClark.Subdivide( cylCage, 2 );
+
+		var cylCreased = cylCage.Clone();
+		CreaseTools.MarkSharpByAngle( cylCreased, 30f );
+		var cylWithCrease = CatmullClark.Subdivide( cylCreased, 2 );
+
+		var slotCage = ObjReader.Read( File.ReadAllText( Path.Combine( outDir, "sketch_slot.obj" ) ) );
+		var slotNoCrease = CatmullClark.Subdivide( slotCage, 3 );
+
+		var slotCreased = slotCage.Clone();
+		CreaseTools.MarkSharpByAngle( slotCreased, 30f );
+		var slotWithCrease = CatmullClark.Subdivide( slotCreased, 3 );
+
+		var tiles = new[]
+		{
+			new PngPreview.Tile( boxNoCrease, "box, no crease" ),
+			new PngPreview.Tile( cylNoCrease, "cylinder, no crease" ),
+			new PngPreview.Tile( slotNoCrease, "slot, no crease" ),
+			new PngPreview.Tile( boxCage, "box cage (ref)", wireframe: true ),
+			new PngPreview.Tile( boxWithCrease, "box, CREASED" ),
+			new PngPreview.Tile( cylWithCrease, "cylinder, CREASED" ),
+			new PngPreview.Tile( slotWithCrease, "slot, CREASED" ),
+			new PngPreview.Tile( cylCage, "cylinder cage (ref)", wireframe: true ),
+		};
+
+		PngPreview.WriteSheet( tiles, Path.Combine( outDir, "preview_crease_fix.png" ) );
 	}
 
 	// ---------------------------------------------------------------------------------------
