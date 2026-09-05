@@ -196,6 +196,7 @@ public static class Program
 		VmdlPhysicsTests.Run();
 
 		VmdlMaterialsTests.Run();
+		BoneSelectionTests.Run();
 
 		UnwrapTests.Run();
 

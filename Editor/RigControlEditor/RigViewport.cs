@@ -1,4 +1,5 @@
 using Editor;
+using Effigy;
 using Marionette;
 using Sandbox;
 using System;
@@ -2071,13 +2072,32 @@ internal sealed class RigViewport : Widget
 		BoneDragStarted?.Invoke( SelectedBone ?? (tops.Count > 0 ? tops[0].Bone.Name : null) );
 	}
 
-	/// <summary>The selected bones with no selected ancestor - those are the ones the group
-	/// transform is applied to; anything under one follows it.</summary>
+	/// <summary>
+	/// The selected bones with no selected ancestor - those are the ones the group transform is
+	/// applied to; anything under one follows it through the hierarchy.
+	///
+	/// The rule is <see cref="BoneSelection.TopMost"/>, out in the kernel where a test can reach
+	/// it. What stays here is the only part that needs the engine's bone objects: flattening them
+	/// into a name-to-parent map. That map deliberately includes ANCESTORS THAT ARE NOT SELECTED,
+	/// because the walk has to step over them to find the selected bone above - testing the
+	/// immediate parent, which is what this did before, double-transformed a bone whenever the
+	/// selection skipped a generation.
+	/// </summary>
 	private static List<(BoneCollection.Bone Bone, Transform World)> TopMost( List<(BoneCollection.Bone Bone, Transform World)> bones )
 	{
-		var names = new HashSet<string>( bones.Select( t => t.Bone.Name ) );
+		var parents = new Dictionary<string, string>();
 
-		return bones.Where( t => t.Bone.Parent is null || !names.Contains( t.Bone.Parent.Name ) ).ToList();
+		foreach ( var (bone, _) in bones )
+		{
+			for ( var b = bone; b is not null; b = b.Parent )
+				parents[b.Name] = b.Parent?.Name;
+		}
+
+		var tops = new HashSet<string>( BoneSelection.TopMost(
+			bones.Select( t => t.Bone.Name ),
+			name => parents.TryGetValue( name, out var parent ) ? parent : null ) );
+
+		return bones.Where( t => tops.Contains( t.Bone.Name ) ).ToList();
 	}
 
 	private static Vector3 Centroid( List<(BoneCollection.Bone Bone, Transform World)> bones )

@@ -56,6 +56,13 @@ forgotten.
   `PaintFeature.cs`, `EffigyPaintBar.cs`
 
 ### Fixed
+- Dragging a multi-bone selection in Marionette no longer moves one bone twice as far as
+  the rest. A group drag is applied to the selected bones that nothing above them is
+  carrying -- but it only checked each bone's immediate parent, so selecting a bone and
+  its *grandchild* while the bone between them stayed unselected let the grandchild
+  through: it was transformed directly and carried by its grandparent at the same time.
+  It reads as the gizmo misbehaving rather than as the selection being misread, which is
+  why it survived. The rule now walks the whole chain. `BoneSelection.cs`
 - Materials from the browser bind to something that exists. Most of the engine's own
   content ships compiled, and the asset browser names those `.vmat_c` -- so dropping one
   on a face, or using it for the whole part, wrote a reference nothing resolves and the
