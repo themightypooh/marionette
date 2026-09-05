@@ -30,6 +30,9 @@ public static class VmdlMaterialsTests
 		TestAlwaysWritesTheList();
 		TestDisplayNameIsNotARemap();
 
+		Section( "vmdl materials: a painted part binds a material that reads paint" );
+		TestPaintedFallback();
+
 		Section( "vmdl materials: tint or cover" );
 		TestBlendChoosesTheFallback();
 
@@ -140,10 +143,57 @@ public static class VmdlMaterialsTests
 	}
 
 	/// <summary>
+	/// A mesh carrying vertex colours must bind the one material that reads them.
+	///
+	/// complex.shader - default.vmat, white.vmat, every ordinary material - does not look at the
+	/// COLOR stream at all, so paint bound to any of them is discarded by the shader. That is why
+	/// painting appeared to do nothing at all rather than appearing subtle.
+	/// </summary>
+	static void TestPaintedFallback()
+	{
+		var studio = new PartStudio();
+		var box = studio.Add( new PrimitiveFeature() );
+		box.SizeX.Value = box.SizeY.Value = box.SizeZ.Value = 2f;
+		studio.Rebuild();
+
+		var mesh = studio.ToMesh();
+
+		Check( "an unpainted mesh takes the plain default",
+			VmdlMaterials.FallbackFor( studio, mesh ) == VmdlMaterials.DefaultMaterial );
+
+		// Paint it: colours parallel to the positions is all HasVertexColors asks for.
+		mesh.VertexColors = new Vec4[mesh.Positions.Count];
+
+		for ( var i = 0; i < mesh.VertexColors.Length; i++ )
+			mesh.VertexColors[i] = new Vec4( 1f, 0f, 0f, 1f );
+
+		Check( "a painted mesh takes the vertex-colour material instead",
+			VmdlMaterials.FallbackFor( studio, mesh ) == VmdlMaterials.PaintedMaterial,
+			VmdlMaterials.FallbackFor( studio, mesh ) );
+
+		var remaps = VmdlMaterials.Remaps( mesh, studio.NameForSlot, studio.MaterialNames,
+			VmdlMaterials.FallbackFor( studio, mesh ) );
+
+		Check( "and that is what the remap list carries",
+			remaps.Count > 0 && remaps.All( r => r.To == VmdlMaterials.PaintedMaterial ),
+			string.Join( ", ", remaps.Select( r => $"{r.From}->{r.To}" ) ) );
+
+		// A slot somebody dropped a material on is still that material - paint does not seize it.
+		var bound = Painted( out var boundMesh, slot: 1, "materials/diner/diner_tile_floor.vmat" );
+		var boundRemaps = VmdlMaterials.Remaps( boundMesh, bound.NameForSlot, bound.MaterialNames,
+			VmdlMaterials.PaintedMaterial );
+
+		Check( "a dropped material survives on a painted part",
+			boundRemaps.Any( r => r.To == "materials/diner/diner_tile_floor.vmat" ) );
+	}
+
+	/// <summary>
 	/// Paint's Blend choice decides what an unbound slot compiles to.
 	///
-	/// Both settings are the same vertex-colour multiply - what moves is the surface underneath it.
-	/// Against white a multiply IS the paint colour, which is the covering look without a shader.
+	/// ON AN UNPAINTED MESH ONLY, now. A mesh actually carrying vertex colours has to bind the
+	/// material that reads them whichever way Blend is set - see TestPaintedFallback - because
+	/// telling Tint from Replace needs a shader combining a base texture with the vertex colour,
+	/// and nothing shipped does one.
 	/// </summary>
 	static void TestBlendChoosesTheFallback()
 	{

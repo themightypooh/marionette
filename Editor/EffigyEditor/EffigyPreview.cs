@@ -39,6 +39,21 @@ internal static class EffigyPreview
 	private const string PreviewMaterial = "materials/dev/gray_50.vmat";
 
 	/// <summary>
+	/// The placeholder for a mesh carrying paint.
+	///
+	/// WHY NOT gray_50, WHICH IS WHY PAINT WAS INVISIBLE. Paint is packed into the vertex COLOR
+	/// stream, and nothing gray_50 uses reads it: complex.shader has a model tint (a per-draw
+	/// constant) and a tint-mask TEXTURE, neither of which is per-vertex. So the colours were
+	/// written faithfully into the vertex buffer and thrown away by the shader, and a painted part
+	/// rendered exactly like an unpainted one.
+	///
+	/// vertex_color.shader is the engine's own answer and it ships compiled: it declares
+	/// `float4 vColor : COLOR0 &lt; Semantic( Color ); &gt;` - the same stream Vertex.Color writes -
+	/// and shades it lit. No shader had to be written for this; it had to be found.
+	/// </summary>
+	private const string PaintedPreviewMaterial = "materials/default/vertex_color.vmat";
+
+	/// <summary>
 	/// Build a Model from the mesh, optionally resolving each face's material slot to a real vmat.
 	/// </summary>
 	/// <param name="materialForSlot">Slot number to bound material path, or null / empty for an
@@ -51,7 +66,8 @@ internal static class EffigyPreview
 
 		var (cornerNormals, normals) = MeshNormals.ComputeCornerNormals( mesh, smoothingAngleDegrees );
 
-		var placeholder = Material.Load( PreviewMaterial );
+		// A painted mesh needs a material that reads the colour it is carrying.
+		var placeholder = Material.Load( mesh.HasVertexColors ? PaintedPreviewMaterial : PreviewMaterial );
 		var bounds = BoundsOf( mesh );
 
 		// Faces bucketed by the material they render with. One drop of brushed steel onto three

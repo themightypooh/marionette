@@ -56,6 +56,16 @@ forgotten.
   `PaintFeature.cs`, `EffigyPaintBar.cs`
 
 ### Fixed
+- Paint is visible. It never was: the colours are written into the mesh's vertex COLOR
+  stream, and the material everything rendered with does not read that stream at all --
+  `complex.shader`'s model tint is a per-draw constant and its tint mask is a texture, so
+  the paint was packed into the vertex buffer correctly and thrown away by the shader. A
+  painted part looked exactly like an unpainted one, in the viewport and in the compiled
+  model. Painted meshes now bind `materials/default/vertex_color.vmat`, which the engine
+  already ships and which declares the COLOR stream by name.
+  `EffigyPreview.cs`, `VmdlMaterials.cs`
+- A material dropped on a face still wins on a painted part -- paint takes the slots that
+  had nothing, not the ones you chose.
 - The paint brush lands on a part you have not subdivided. Paint colours vertices, and the
   default brush was a twelfth of the model's diagonal -- on a 1-unit box that is 0.144, while
   the nearest corner to the middle of a face is 0.707 away, so the brush reached no vertex at
