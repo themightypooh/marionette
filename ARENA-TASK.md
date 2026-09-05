@@ -68,6 +68,25 @@ it is entirely a matter of the numbers you choose.
 Put the key dimensions in named constants at the top with a comment giving each in metres as well,
 the way `StadiumGen` already does with `W`, `B`, `F`, `D`, `H`.
 
+## Name everything
+
+**Every feature gets a real name, and so does every body.** A forty-feature stadium whose tree reads
+`Box 1`, `Extrude 3`, `Mirror 2` is not an editable model, it is a lump with a history attached —
+and "somebody could still edit this" is half the point of building it in Effigy rather than dumping
+a mesh.
+
+- `feature.Name = "..."` on every feature as you add it. Say what the thing IS, not what tool made
+  it: `"Field slab"`, `"North bank profile"`, `"North bank"`, `"Bank mirror (south)"`,
+  `"Corner infill NE"`, `"Parapet rim"`, `"Vomitory cuts (north)"`.
+- `studio.BodyNames[body.Id] = "..."` for the parts that survive to the end, so the Parts list reads
+  as a stadium too — `"Field"`, `"Bowl"`, `"Rim"`. Body ids are stable across rebuilds, which is
+  exactly why the name is keyed on the id.
+- Sketches get names as well. A sketch called `Sketch 4` that turns out to be the terrace profile is
+  the one you will need to find again.
+
+Do this AS YOU BUILD, not as a renaming pass at the end. The pass at the end never happens, and
+you will have lost track of which `Extrude` was which by then.
+
 ## Traps
 
 - **Do not Subdivide any of this.** Look at the cost table the suite prints: a box at level 6 is
