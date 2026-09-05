@@ -55,9 +55,12 @@ public static class VmdlMaterialsTests
 			text.Contains( "use_global_default = false" )
 			&& !text.Contains( "use_global_default = true" ) );
 
+		// THE FIELD, not the string anywhere in the node. default.vmat now appears legitimately as
+		// the `to` of an unbound slot's own remap, which is the opposite of the failure this
+		// guards: a GLOBAL default replaces every slot at once, a per-slot remap replaces one.
 		Check( "and there is no global default material waiting to replace them",
 			text.Contains( "global_default_material = \"\"" )
-			&& !text.Contains( "materials/default.vmat" ) );
+			&& !text.Contains( $"global_default_material = \"{VmdlMaterials.DefaultMaterial}\"" ) );
 
 		Check( "the bound vmat is the remap target",
 			text.Contains( "to = \"materials/diner/diner_tile_floor.vmat\"" ) );
@@ -96,8 +99,18 @@ public static class VmdlMaterialsTests
 		Check( "an unpainted part still writes a MaterialGroupList",
 			text.Contains( "_class = \"MaterialGroupList\"" ) );
 
-		Check( "with no remaps — there is nothing to bind",
-			VmdlMaterials.Remaps( studio.ToMesh(), studio.NameForSlot, studio.MaterialNames ).Count == 0 );
+		// NOT "no remaps". An unpainted part used to write an empty list, which left the compiled
+		// model asking for `material_0` - no asset answers to that, so it rendered in the bright
+		// red missing-material shader. Every slot the mesh uses names a real asset now.
+		var bare = VmdlMaterials.Remaps( studio.ToMesh(), studio.NameForSlot, studio.MaterialNames );
+
+		Check( "its one slot is remapped rather than left dangling", bare.Count == 1,
+			string.Join( ", ", bare.Select( r => $"{r.From}->{r.To}" ) ) );
+
+		Check( "from the name the mesh writers emit", bare[0].From == "material_0", bare[0].From );
+
+		Check( "to a material that exists, so it renders plain instead of red",
+			bare[0].To == VmdlMaterials.DefaultMaterial, bare[0].To );
 
 		Check( "and still refuses the global default, so ModelDoc cannot fill one in",
 			text.Contains( "use_global_default = false" ) );
@@ -110,7 +123,16 @@ public static class VmdlMaterialsTests
 		var studio = Painted( out var mesh, slot: 3, "anodised" );
 		var remaps = VmdlMaterials.Remaps( mesh, studio.NameForSlot, studio.MaterialNames );
 
-		Check( "a hand-typed display name does not become a remap", remaps.Count == 0,
+		Check( "a hand-typed display name is never a remap TARGET",
+			remaps.All( r => r.To != "anodised" ),
+			string.Join( ", ", remaps.Select( r => $"{r.From}->{r.To}" ) ) );
+
+		// It still has to go somewhere: the slot is on the mesh, so the compiled model will ask
+		// for it by name, and "anodised" is no more of an asset than "material_3" is. The part
+		// also carries an untouched slot 0, so this is every slot falling back, not just the one.
+		Check( "it falls back to the default instead",
+			remaps.Any( r => r.From == "anodised" )
+			&& remaps.All( r => r.To == VmdlMaterials.DefaultMaterial ),
 			string.Join( ", ", remaps.Select( r => $"{r.From}->{r.To}" ) ) );
 	}
 
@@ -129,8 +151,12 @@ public static class VmdlMaterialsTests
 		Check( "and both with .vmat stripped, because ModelDoc drops everything after a period",
 			froms.Contains( "halo_3" ) && froms.Contains( "materials/halo/characters/elite/halo_3" ) );
 
+		// Excluding the fallback: the part's other slot is unbound and remaps to the default, which
+		// is not an alias of this vmat and never was.
 		Check( "every alias points at the same vmat",
-			remaps.All( r => r.To == "materials/halo/characters/elite/halo_3.vmat" ) );
+			remaps.Where( r => r.To != VmdlMaterials.DefaultMaterial )
+				.All( r => r.To == "materials/halo/characters/elite/halo_3.vmat" ),
+			string.Join( ", ", remaps.Select( r => $"{r.From}->{r.To}" ) ) );
 	}
 
 	static void TestTwoSlots()

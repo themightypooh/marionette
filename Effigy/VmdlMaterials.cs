@@ -39,11 +39,28 @@ namespace Effigy;
 public static class VmdlMaterials
 {
 	/// <summary>
+	/// What an unbound slot compiles to.
+	///
+	/// EVERY SLOT MUST NAME A REAL ASSET. Leaving an unbound slot alone meant the compiled model
+	/// carried the mesh's own name for it - <c>material_0</c> - which resolves to no asset at all,
+	/// so the model rendered in the bright red missing-material shader. That is the first thing
+	/// anybody saw after their first export, and it reads as the exporter having failed.
+	///
+	/// This is also what makes PAINT show up. Paint is vertex colour (see PaintFeature: "that is
+	/// what the engine composites over a material natively"), and vertex colour is a tint - it
+	/// needs a material underneath to multiply into. With no material there is nothing to tint and
+	/// the colour goes nowhere. <c>complex.vfx</c> carries <c>g_flModelTintAmount 1.0</c>, so a
+	/// painted part bound to this renders AS its paint, and an unpainted one renders plain.
+	/// </summary>
+	public const string DefaultMaterial = "materials/default.vmat";
+
+	/// <summary>
 	/// The MaterialGroupList node, indented to sit among a RootNode's children.
 	///
 	/// ALWAYS A NODE, even when nothing is bound. An omitted list is what ModelDoc replaces with
-	/// the global default; an empty remap list with <c>use_global_default = false</c> leaves the
-	/// mesh names in place, which is the honest answer for a part nobody has painted.
+	/// the global default, and every slot the mesh uses is named here explicitly - bound ones to
+	/// their vmat, the rest to <see cref="DefaultMaterial"/> - so nothing is left to resolve on a
+	/// name no asset answers to.
 	/// </summary>
 	public static string GroupList( PartStudio studio, PolyMesh mesh )
 	{
@@ -104,10 +121,20 @@ public static class VmdlMaterials
 
 		foreach ( var slot in SlotsOn( mesh ) )
 		{
-			if ( !TryBoundVmat( slot, materialNames, out var target ) )
-				continue;
-
 			var written = nameForSlot is not null ? nameForSlot( slot ) : ObjWriter.DefaultMaterialName( slot );
+
+			// AN UNBOUND SLOT IS STILL A REMAP, to the default. Skipping it left the compiled model
+			// asking for `material_0`, which is not an asset - see DefaultMaterial for why that is
+			// the red model, and why paint needs this to show at all. A slot carrying a hand-typed
+			// display name ("anodised") lands here too: there is no asset by that name either, and
+			// the default is a better answer than the missing-material shader.
+			if ( !TryBoundVmat( slot, materialNames, out var target ) )
+			{
+				if ( seenFrom.Add( written ) )
+					remaps.Add( (written, DefaultMaterial) );
+
+				continue;
+			}
 
 			foreach ( var from in FromAliases( written, target ) )
 			{

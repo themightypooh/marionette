@@ -35,7 +35,20 @@ forgotten.
 
 ## Unreleased
 
-Nothing yet.
+### Fixed
+- A compiled model arrives wearing a material instead of the bright red missing-material
+  shader. Every material slot the mesh actually uses is now named in the model's remap
+  list -- the ones you dropped a material on point at that material, and the rest point at
+  `materials/default.vmat`. They used to point at nothing: the mesh calls an unbound slot
+  `material_0`, no asset answers to that name, and red is what the engine shows for a
+  material it cannot find. Since the geometry, UVs and skinning were all fine, the first
+  thing anyone saw after their first export was a broken-looking model that was not broken.
+  `VmdlMaterials.cs`
+- Paint survives the compile, for the same reason. Paint is vertex colour, and vertex
+  colour is a tint -- it needs a material underneath to multiply into, and an unbound slot
+  had none, so a painted part compiled to red rather than to its paint. Bound to the
+  default it renders AS the paint, which is what painting a part and exporting it should
+  do. What still has not been checked is the far side of the compile in a real scene.
 
 ## v367690 — 2026-09-05
 
