@@ -54,9 +54,32 @@ Reused unchanged:
 
 ## What must be built
 
-1. **A UV gate.** Texel paint needs UVs. A `PaintFeature` on a body with no usable UV layout must
-   refuse at the door with a message naming `UV Project` (the existing feature, `Mode = Unwrap`),
-   the way other Effigy tools refuse rather than guess. Do not auto-unwrap.
+1. **Auto-unwrap on entering Paint — do NOT gate.** Texel paint needs UVs, but the user must not
+   have to know that. When Paint is entered on a body whose UVs will not serve, **insert a
+   `UVProjectFeature` with `Mode = "Unwrap"` above the paint target automatically** and carry on
+   into painting.
+
+   This is not magic and must not look like it. An unwrap is an ordinary feature in Effigy's
+   history, so the inserted one appears in the feature tree, participates in rollback, and is
+   undone by one Ctrl+Z like anything else. Say so in the status prompt when you add one — "Added a
+   UV Project so the paint has somewhere to live" — rather than changing the tree silently.
+
+   **How to decide whether the UVs will serve.** `NormalBake.Measure( mesh, resolution )` already
+   answers this and is what the bake depends on. It returns `UVCoverage` with `CoveredTexels`,
+   `OverlappingTexels`, `FacesOutsideTheSquare` and `FaceCount`. Paint needs what a bake needs:
+   every face owning its own texels. So unwrap when coverage is ~zero (no UVs at all), when
+   overlap is significant, or when faces escape the square. Do not write a second rule — use this
+   one, because a disagreement between "the bake says these UVs are bad" and "paint says they are
+   fine" is a bug nobody will find.
+
+   **The one real cost, and it needs handling rather than ignoring.** Box and planar projection
+   TILE on purpose — that is how a dropped material repeats at a sensible world size, which is what
+   `PartStudio.MaterialScales` and `EffigyMaterialSize` exist for. An unwrap is 0..1 and does not
+   repeat, so auto-unwrapping a part that already wears a tiled material will visibly change how
+   that material sits on it. `docs/dev/PAINTING.md` notes this as "a painted slot cannot also tile".
+   Handle it explicitly: if the body carries bound materials whose scale implies tiling, still
+   unwrap (the user asked to paint) but say what happened in the prompt, so a suddenly-different
+   concrete wall is explained rather than mysterious. Do not silently rescale their materials.
 2. **Canvas persistence.** Strokes already persist and `PaintReplay.Replay` rebuilds the canvas
    from them, so prefer replaying on rebuild over storing the image. Key any cache on
    `AtlasId.Of(mesh)` **and** the sculpt topology id — a re-unwrap keeps topology and moves every
@@ -93,8 +116,9 @@ Reused unchanged:
 
 ## Acceptance
 
-- Paint a **bare 1×1×1 box** with no Subdivide: the mark appears under the cursor, at brush
-  resolution, not spread across whole faces.
+- Paint a **bare 1×1×1 box** with no Subdivide and no UV Project of your own: pressing Paint gets
+  you painting, and the mark appears under the cursor at brush resolution, not spread across whole
+  faces. A UV Project appears in the feature tree, and one Ctrl+Z removes it.
 - Holding the button still does not keep darkening the same spot.
 - Strokes survive save → close → reopen, and survive editing a feature below the Paint feature.
 - The material brush and dropped materials still work and are unaffected.
