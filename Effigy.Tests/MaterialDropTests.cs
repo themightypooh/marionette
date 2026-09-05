@@ -375,6 +375,22 @@ public static class MaterialDropTests
 
 		Report.Check( "so it does not allocate a second slot for the same material",
 			MaterialDrop.SlotFor( studio, "materials/wood/oak.vmat_c" ) == first );
+
+		// THE UPGRADE. A document bound before the suffix was understood holds the broken spelling,
+		// and Normalise now calls it equal - so without an explicit upgrade the name that does not
+		// resolve stays put and re-dropping the material appears to do nothing.
+		var stale = Boxed( out var staleBody );
+		var face = FaceIndexFacing( staleBody.Mesh, new Vec3( 0, 0, 1 ) );
+
+		stale.MaterialNames[1] = "materials/concrete/wall/concrete_rough_a.vmat_c";
+
+        MaterialDrop.Drop( stale, staleBody.Id,
+			face, FacePlane.Capture( staleBody, face, staleBody.Mesh.FaceCentroid( staleBody.Mesh.Faces[face] ) ),
+			"materials/concrete/wall/concrete_rough_a.vmat_c", out _ );
+
+		Report.Check( "a slot already holding a compiled path is rewritten to the source one",
+			stale.MaterialNames[1] == "materials/concrete/wall/concrete_rough_a.vmat",
+			stale.MaterialNames[1] );
 	}
 
 	static void TestBrushDab()

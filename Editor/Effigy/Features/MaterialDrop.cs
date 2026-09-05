@@ -160,11 +160,25 @@ public static class MaterialDrop
 		// with backslashes does not rewrite the name to the other spelling. The stored value would
 		// still resolve to the same material, but the document would come back dirty, an undo step
 		// would appear, and every open control would refresh — for a change nobody made.
+		// STORED AS THE SOURCE PATH, whatever the caller was handed. The engine appends `_c` itself
+		// when it loads a material, so a slot holding `x.vmat_c` sends it looking for `x.vmat_c_c`
+		// - which is not a file, and a face bound to it renders in the missing-material shader.
+		var stored = AsSourcePath( name );
+
 		var named = false;
 
-		if ( !studio.MaterialNames.TryGetValue( slot, out var existing ) || Normalise( existing ) != Normalise( name ) )
+		var hasExisting = studio.MaterialNames.TryGetValue( slot, out var existing );
+
+		// A COMPILED NAME IS UPGRADED even though it compares equal. Normalise says `.vmat_c` and
+		// `.vmat` are the same asset, which is right for "does this part already use it" and wrong
+		// as a reason to leave the broken spelling in place - without this, a document that bound a
+		// material before the suffix was understood keeps the name that does not resolve, and
+		// re-dropping the same material looks like it did nothing.
+		var stale = hasExisting && !string.Equals( existing, AsSourcePath( existing ), StringComparison.Ordinal );
+
+		if ( !hasExisting || Normalise( existing ) != Normalise( stored ) || stale )
 		{
-			studio.MaterialNames[slot] = name;
+			studio.MaterialNames[slot] = stored;
 			named = true;
 		}
 
