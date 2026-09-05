@@ -56,6 +56,14 @@ forgotten.
   `PaintFeature.cs`, `EffigyPaintBar.cs`
 
 ### Fixed
+- Materials from the browser bind to something that exists. Most of the engine's own
+  content ships compiled, and the asset browser names those `.vmat_c` -- so dropping one
+  on a face, or using it for the whole part, wrote a reference nothing resolves and the
+  face came back in the bright red missing-material shader. The source path is what goes
+  in the document now. The browser's "bound" badge and the one-slot-per-material rule were
+  wrong in the same way and by the same cause: a part wearing `oak.vmat` did not recognise
+  `oak.vmat_c` as the material it already had, so it took a second slot for it.
+  `MaterialDrop.cs`, `EffigyMaterialsPanel.cs`
 - A compiled model arrives wearing a material instead of the bright red missing-material
   shader. Every material slot the mesh actually uses is now named in the model's remap
   list -- the ones you dropped a material on point at that material, and the rest point at

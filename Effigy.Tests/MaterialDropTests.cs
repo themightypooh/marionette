@@ -36,6 +36,9 @@ public static class MaterialDropTests
 		Report.Section( "material drop: the same path spelled differently is the same material" );
 		TestSpelling();
 
+		Report.Section( "material drop: a compiled path is the same asset as its source" );
+		TestCompiledPath();
+
 		Report.Section( "material drop: a brush dab covers many faces at once" );
 		TestBrushDab();
 		TestBrushReleasesEmptiedSlots();
@@ -338,6 +341,42 @@ public static class MaterialDropTests
 	/// A dab is many faces and ONE slot — the case the brush exists for, and the one where looping
 	/// the single-face drop by hand would be easiest to get wrong.
 	/// </summary>
+	/// <summary>
+	/// `.vmat_c` is what the asset browser calls anything that ships compiled, which is most of the
+	/// engine's own content. Binding that string is what put the missing-material shader on a face
+	/// somebody had just painted: nothing resolves it, so the model asks for a material that is not
+	/// there. Two separate jobs, and both were wrong.
+	/// </summary>
+	static void TestCompiledPath()
+	{
+		Report.Check( "the source path is what a document stores",
+			MaterialDrop.AsSourcePath( "materials/concrete/wall/concrete_rough_a.vmat_c" )
+				== "materials/concrete/wall/concrete_rough_a.vmat" );
+
+		Report.Check( "a source path is left alone",
+			MaterialDrop.AsSourcePath( "materials/wood/oak.vmat" ) == "materials/wood/oak.vmat" );
+
+		Report.Check( "and case is not touched, because this is written to disk and shown to people",
+			MaterialDrop.AsSourcePath( "Materials/Wood/Oak.vmat_c" ) == "Materials/Wood/Oak.vmat" );
+
+		Report.Check( "the two spellings compare equal, so the browser badge finds a bound material",
+			MaterialDrop.Normalise( "materials/wood/oak.vmat_c" )
+				== MaterialDrop.Normalise( "materials/wood/oak.vmat" ) );
+
+		// The consequence that actually bit: a second slot for a material the part already wore.
+		var studio = Boxed( out var body );
+		var top = FaceIndexFacing( body.Mesh, new Vec3( 0, 0, 1 ) );
+
+		Drop( studio, body, top, "materials/wood/oak.vmat", out var first );
+
+		Report.Check( "the compiled spelling finds the slot the source one took",
+			MaterialDrop.SlotCarrying( studio, "materials/wood/oak.vmat_c" ) == first,
+			$"{MaterialDrop.SlotCarrying( studio, "materials/wood/oak.vmat_c" )} vs {first}" );
+
+		Report.Check( "so it does not allocate a second slot for the same material",
+			MaterialDrop.SlotFor( studio, "materials/wood/oak.vmat_c" ) == first );
+	}
+
 	static void TestBrushDab()
 	{
 		var studio = Boxed( out var body );

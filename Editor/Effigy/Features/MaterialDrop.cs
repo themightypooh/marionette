@@ -345,6 +345,40 @@ public static class MaterialDrop
 	/// second copy of the rule over there: the two would agree until one of them learned about
 	/// trailing slashes.
 	/// </summary>
-	public static string Normalise( string path ) =>
-		string.IsNullOrWhiteSpace( path ) ? null : path.Trim().Replace( '\\', '/' ).ToLowerInvariant();
+	public static string Normalise( string path )
+	{
+		if ( string.IsNullOrWhiteSpace( path ) )
+			return null;
+
+		var n = path.Trim().Replace( '\\', '/' ).ToLowerInvariant();
+
+		// A COMPILED PATH IS THE SAME ASSET AS ITS SOURCE. The asset browser reports
+		// `materials/x.vmat_c` for a material that ships compiled - most of the engine's own
+		// content - while a project's own material is `materials/x.vmat`, and a document may hold
+		// either depending on which one was bound. Comparing them as different strings meant the
+		// browser's "bound" badge missed a material the part was wearing, and SlotFor handed out a
+		// second slot for a material the document already had.
+		return n.EndsWith( "_c", StringComparison.Ordinal ) ? n[..^2] : n;
+	}
+
+	/// <summary>
+	/// The reference a DOCUMENT should store for a material, given whatever the asset browser
+	/// called it.
+	///
+	/// Normalise answers "are these the same asset"; this answers "what do we write down", and the
+	/// two are different jobs. A `.vmat_c` is the compiler's output - naming it in a model or a
+	/// preview resolves to nothing, which is the bright red missing-material shader - so the source
+	/// path is what goes in the file even when the compiled one is all the browser knows about.
+	/// Case is left alone here, unlike Normalise: this value is shown to people and written to
+	/// disk, and lowercasing a path is a change nobody asked for.
+	/// </summary>
+	public static string AsSourcePath( string path )
+	{
+		if ( string.IsNullOrWhiteSpace( path ) )
+			return path;
+
+		var n = path.Trim().Replace( '\\', '/' );
+
+		return n.EndsWith( "_c", StringComparison.OrdinalIgnoreCase ) ? n[..^2] : n;
+	}
 }

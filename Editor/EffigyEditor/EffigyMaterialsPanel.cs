@@ -380,6 +380,17 @@ internal sealed class EffigyMaterialsPanel : Widget, AssetSystem.IEventListener
 	private static string Relative( AssetEntry entry ) =>
 		entry.Asset?.RelativePath?.Replace( '\\', '/' ) ?? "";
 
+	/// <summary>
+	/// What to hand the DOCUMENT for an asset in this list.
+	///
+	/// Every path that leaves this panel goes through here. The browser reports a compiled
+	/// `.vmat_c` for anything that ships compiled, and binding that to a slot writes a reference
+	/// the engine resolves to nothing - which renders as the missing-material shader. The source
+	/// path is what a model can actually name.
+	/// </summary>
+	private static string Reference( Asset asset ) =>
+		MaterialDrop.AsSourcePath( asset?.RelativePath );
+
 	/// <summary>An asset's path relative to the folder we are standing in, or null when it is not
 	/// under it at all. The whole folder view is this one function plus a look for the next slash.
 	/// </summary>
@@ -583,7 +594,7 @@ internal sealed class EffigyMaterialsPanel : Widget, AssetSystem.IEventListener
 
 		var drag = new Drag( this );
 
-		drag.Data.Text = entry.Asset.RelativePath;
+		drag.Data.Text = Reference( entry.Asset );
 		drag.Data.Url = new Uri( "file:///" + entry.Asset.AbsolutePath );
 		drag.Execute();
 
@@ -601,7 +612,7 @@ internal sealed class EffigyMaterialsPanel : Widget, AssetSystem.IEventListener
 		}
 
 		if ( item is AssetEntry entry && entry.Asset is { } asset )
-			MaterialActivated?.Invoke( asset.RelativePath );
+			MaterialActivated?.Invoke( Reference( asset ) );
 	}
 
 	/// <summary>
@@ -618,7 +629,7 @@ internal sealed class EffigyMaterialsPanel : Widget, AssetSystem.IEventListener
 			return;
 
 		var menu = new Menu( this );
-		var path = asset.RelativePath;
+		var path = Reference( asset );
 		var current = _slots.TryGetValue( entry, out var bound ) ? bound : -1;
 
 		menu.AddHeading( Path.GetFileName( path ) );
@@ -692,7 +703,7 @@ internal sealed class EffigyMaterialsPanel : Widget, AssetSystem.IEventListener
 	{
 		ShowScaleFor( item );
 
-		var chosen = (item as AssetEntry)?.Asset?.RelativePath;
+		var chosen = Reference( (item as AssetEntry)?.Asset );
 
 		if ( chosen != SelectedMaterial )
 		{
