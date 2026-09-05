@@ -71,7 +71,7 @@ public static class VmdlAnimationTests
 	/// NO -90 YAW HERE, unlike the OBJ samples, and that is not an oversight: it is ModelDoc's OBJ
 	/// importer that turns the mesh, and this one is a DMX.
 	/// </summary>
-	internal static void WriteSample( string outDir, Skeleton skeleton )
+	internal static void WriteSample( string outDir, Skeleton skeleton, PolyMesh mesh )
 	{
 		var vmdl =
 			"<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:modeldoc29:version{3cec427c-1b0e-4d48-a90a-0436f33a6041} -->\n"
@@ -92,6 +92,11 @@ public static class VmdlAnimationTests
 			// so a sample missing it would answer a question about the sample.
 			+ VmdlAnimation.BoneMarkupList( skeleton )
 			+ VmdlAnimation.BindPoseList()
+			// AND THE MATERIAL LIST, for the same reason as the two above: the editor writes one,
+			// so a sample without it is not the thing being checked. Its absence is exactly what
+			// made this file useless for catching the bug where an unbound slot compiled to the
+			// missing-material shader - the sample had no slots named at all.
+			+ VmdlMaterials.GroupList( mesh, null, null )
 			+ "\t\t]\n\t\tmodel_archetype = \"\"\n\t\tprimary_associated_entity = \"\"\n"
 			+ "\t\tanim_graph_name = \"\"\n\t\tbase_model_name = \"\"\n\t}\n}\n";
 
@@ -100,6 +105,8 @@ public static class VmdlAnimationTests
 		Check( $"wrote {outDir}/sample_rigged.vmdl - compile it beside sample_rigged.dmx and it should load with {skeleton.Count} bones",
 			Count( vmdl, "_class = \"AnimBindPose\"" ) == 1
 			&& Count( vmdl, "_class = \"BoneMarkup\"" ) == skeleton.Count
+			&& Count( vmdl, "_class = \"MaterialGroupList\"" ) == 1
+			&& vmdl.Contains( VmdlMaterials.DefaultMaterial )
 			&& Count( vmdl, "{" ) == Count( vmdl, "}" ) );
 	}
 

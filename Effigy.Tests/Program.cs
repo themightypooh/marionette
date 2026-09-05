@@ -618,7 +618,7 @@ public static class Program
 		// The .vmdl that wraps the rigged DMX, so the bind pose and the bone markup can be put in
 		// front of the compiler. Same skeleton, so the bone count the file claims is the one the DMX
 		// actually carries.
-		VmdlAnimationTests.WriteSample( outDir, skeleton );
+		VmdlAnimationTests.WriteSample( outDir, skeleton, box );
 
 		// And the animation path on that same skeleton: a clip DMX plus a .vmdl that compiles the
 		// two together. Same skeleton object as the mesh, deliberately — a clip written against a

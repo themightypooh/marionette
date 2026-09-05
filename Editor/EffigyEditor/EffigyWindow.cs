@@ -554,7 +554,7 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 		_materialBrushBar = new EffigyMaterialBrushBar( _viewport.Canvas ) { Changed = OnPaintBarChanged };
 		_viewport.AddPaintOverlay( _materialBrushBar );
 		_viewport.MaterialDabbed = OnMaterialDabbed;
-		_viewport.MaterialStrokeStarted = RecordUndo;
+		_viewport.MaterialStrokeStarted = OnMaterialStrokeStarted;
 
 		_viewport.AddPaintOverlay( _paintBar );
 
@@ -1631,6 +1631,7 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 		_viewport.BeginMaterialBrush( session );
 		_materialBrushBar.Bind( session );
 		_materialBrushBar.SetMaterial( _materialsPanel?.SelectedMaterial );
+		_viewport.MaterialBrushLoaded = !string.IsNullOrWhiteSpace( _materialsPanel?.SelectedMaterial );
 
 		SetPrompt( string.IsNullOrWhiteSpace( _materialsPanel?.SelectedMaterial )
 			? "Material brush: pick a material in the Materials browser, then drag on the model."
@@ -1658,8 +1659,30 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 	/// so there is no copy of the material here to keep in step.</summary>
 	private void OnBrushMaterialChanged()
 	{
-		if ( _viewport is { IsMaterialBrushing: true } )
-			_materialBrushBar?.SetMaterial( _materialsPanel?.SelectedMaterial );
+		if ( _viewport is not { IsMaterialBrushing: true } )
+			return;
+
+		_materialBrushBar?.SetMaterial( _materialsPanel?.SelectedMaterial );
+		_viewport.MaterialBrushLoaded = !string.IsNullOrWhiteSpace( _materialsPanel?.SelectedMaterial );
+	}
+
+	/// <summary>
+	/// A stroke began: record undo, and say so if the brush has nothing loaded.
+	///
+	/// The prompt is here rather than in the dab because a dab fires every frame - the same reason
+	/// undo is recorded here - so warning there would rewrite the status bar continuously while
+	/// the button is held. Once per gesture is what a person can read.
+	/// </summary>
+	private void OnMaterialStrokeStarted()
+	{
+		if ( string.IsNullOrWhiteSpace( _materialsPanel?.SelectedMaterial ) )
+		{
+			SetPrompt( "No material chosen — pick one in the Materials browser and the ring turns "
+				+ "amber. Nothing was painted." );
+			return;
+		}
+
+		RecordUndo();
 	}
 
 	private void LeaveMaterialBrush()

@@ -49,6 +49,16 @@ internal sealed partial class EffigyViewport
 	/// </summary>
 	public Action MaterialStrokeStarted { get; set; }
 
+	/// <summary>
+	/// Whether a material is actually chosen. The window sets it from the Materials browser.
+	///
+	/// THE RING HAS TO SAY SO. Without this the brush draws its ring, outlines the faces under it
+	/// and then does nothing at all when dragged, because there is no material to lay down - which
+	/// looks exactly like a broken tool rather than an unloaded one. Unloaded, the ring goes grey
+	/// and stops outlining faces it is not going to take.
+	/// </summary>
+	public bool MaterialBrushLoaded { get; set; }
+
 	private MeshHit? _materialCursor;
 	private bool _materialStroking;
 
@@ -118,12 +128,15 @@ internal sealed partial class EffigyViewport
 			return;
 
 		var mesh = MaterialBrush.Mesh;
+		var colour = MaterialBrushLoaded ? MaterialCursorColor : UnloadedCursorColor;
 
 		Gizmo.Draw.IgnoreDepth = true;
-		Gizmo.Draw.Color = MaterialCursorColor.WithAlpha( 0.5f );
+		Gizmo.Draw.Color = colour.WithAlpha( 0.5f );
 		Gizmo.Draw.LineThickness = 1.5f;
 
-		foreach ( var faceIndex in MaterialBrush.FacesAt( hit ) )
+		// Only when there is something to lay down: outlining faces the brush will not touch is a
+		// promise it cannot keep.
+		foreach ( var faceIndex in MaterialBrushLoaded ? MaterialBrush.FacesAt( hit ) : NoFaces )
 		{
 			if ( faceIndex < 0 || faceIndex >= mesh.Faces.Count )
 				continue;
@@ -148,7 +161,7 @@ internal sealed partial class EffigyViewport
 
 		var radius = MaterialBrush.Radius;
 
-		Gizmo.Draw.Color = MaterialCursorColor;
+		Gizmo.Draw.Color = colour;
 
 		var lift = normal * (radius * 0.01f);
 		const int Segments = 40;
@@ -167,4 +180,10 @@ internal sealed partial class EffigyViewport
 	/// <summary>Amber, so it is neither sculpt's blue nor paint's pink — the three brushes are told
 	/// apart by the colour of their ring before anything else.</summary>
 	private static readonly Color MaterialCursorColor = new( 1f, 0.75f, 0.25f, 0.9f );
+
+	/// <summary>Grey, for a brush with nothing loaded - the ring still tracks the surface so the
+	/// tool is visibly alive, it just does not claim it is about to paint anything.</summary>
+	private static readonly Color UnloadedCursorColor = new( 0.6f, 0.6f, 0.6f, 0.7f );
+
+	private static readonly IReadOnlyList<int> NoFaces = new List<int>();
 }
