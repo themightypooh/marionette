@@ -221,8 +221,6 @@ forgotten.
   back identical after a save and reopen. What is still unchecked is the far side of the
   compile: nobody has looked at how the engine's shader composites those colours. Check a
   painted model renders its paint before relying on it.
-- Paint tints the material rather than covering it, which is what the engine's standard
-  material does for free; paint that fully replaces the colour under it needs a shader.
 
 ## v367420 — 2026-09-04
 
