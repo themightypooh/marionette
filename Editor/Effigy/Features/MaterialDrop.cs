@@ -274,6 +274,63 @@ public static class MaterialDrop
 	}
 
 	/// <summary>
+	/// Put <paramref name="material"/> on every face a brush dab covered, in one pass.
+	///
+	/// WHY THIS EXISTS RATHER THAN THE CALLER LOOPING <see cref="Drop"/>. It can, and this does -
+	/// the per-face rules are subtle enough (reuse the slot already carrying the material, do not
+	/// report a face already on it as a change, retire a slot the last face just left) that a second
+	/// implementation of them for the brush would drift from this one. What the brush needs on top
+	/// is the aggregate: which slot everything landed on, and every slot the dab emptied, since a
+	/// stroke that sweeps a material off thirty faces can retire several at once.
+	///
+	/// FACE INDICES ARE INTO THE BODY'S CURRENT MESH, and stay valid for the whole call because
+	/// nothing here rebuilds - this edits the history exactly as <see cref="Drop"/> does. Call
+	/// Rebuild once afterwards, which is the whole point of doing the dab in one call.
+	///
+	/// The reference for each face is captured at its CENTROID rather than at the point the brush
+	/// passed over. A dab covers whole faces or none of them, so the centroid is the honest anchor
+	/// - and it is stable, where the brush point would make the same face resolve differently
+	/// depending on which way the stroke crossed it.
+	/// </summary>
+	public static int Brush( PartStudio studio, Body body, IEnumerable<int> faceIndices,
+		string material, out int slot, out List<int> released )
+	{
+		slot = -1;
+		released = new List<int>();
+
+		if ( studio is null || body?.Mesh is not { } mesh || faceIndices is null )
+			return 0;
+
+		if ( Normalise( material ) is null )
+			return 0;
+
+		var changed = 0;
+
+		// Sorted and de-duplicated: a dab reports faces in whatever order the BVH walked them, and
+		// the same face twice would be a second Assign that reports no change anyway. Ordering keeps
+		// the feature's face list stable between two dabs that covered the same faces, which is what
+		// stops a redundant document edit.
+		foreach ( var faceIndex in faceIndices.Distinct().OrderBy( i => i ) )
+		{
+			if ( faceIndex < 0 || faceIndex >= mesh.Faces.Count )
+				continue;
+
+			var reference = FacePlane.Capture( body, faceIndex, mesh.FaceCentroid( mesh.Faces[faceIndex] ) );
+
+			if ( Drop( studio, body.Id, faceIndex, reference, material, out var landed, out var freed ) )
+				changed++;
+
+			if ( landed >= 0 )
+				slot = landed;
+
+			if ( freed >= 0 && !released.Contains( freed ) )
+				released.Add( freed );
+		}
+
+		return changed;
+	}
+
+	/// <summary>
 	/// A material path reduced to something two spellings of the same asset agree on.
 	///
 	/// Separators and case, because a path typed by hand, one from an asset picker and one from a

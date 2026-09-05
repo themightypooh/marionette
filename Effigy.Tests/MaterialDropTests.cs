@@ -36,6 +36,10 @@ public static class MaterialDropTests
 		Report.Section( "material drop: the same path spelled differently is the same material" );
 		TestSpelling();
 
+		Report.Section( "material drop: a brush dab covers many faces at once" );
+		TestBrushDab();
+		TestBrushReleasesEmptiedSlots();
+
 		Report.Section( "material drop: nothing to do, nothing changed" );
 		TestNoChange();
 
@@ -328,6 +332,80 @@ public static class MaterialDropTests
 
 		Report.Check( "and the name written first is the one kept",
 			studio.MaterialNames[first] == "materials/Dev/Grid.vmat", studio.MaterialNames[first] );
+	}
+
+	/// <summary>
+	/// A dab is many faces and ONE slot — the case the brush exists for, and the one where looping
+	/// the single-face drop by hand would be easiest to get wrong.
+	/// </summary>
+	static void TestBrushDab()
+	{
+		var studio = Boxed( out var body );
+		var faces = Enumerable.Range( 0, body.Mesh.Faces.Count ).ToList();
+
+		var changed = MaterialDrop.Brush( studio, body, faces,
+			"materials/dev/reflectivity_30.vmat", out var slot, out var released );
+
+		Report.Check( "every face of the box was moved", changed == faces.Count,
+			$"{changed} of {faces.Count}" );
+
+		Report.Check( "onto one slot, not one each", slot == 1, $"slot {slot}" );
+
+		Report.Check( "and only that one slot is named", studio.MaterialNames.Count == 1
+			&& studio.MaterialNames[1] == "materials/dev/reflectivity_30.vmat" );
+
+		Report.Check( "nothing was emptied, because nothing was painted before",
+			released.Count == 0, string.Join( ", ", released ) );
+
+		var report = studio.Rebuild();
+
+		Report.Check( "and it builds", !report.HasErrors, report.ToString() );
+
+		var mesh = studio.Bodies.Single().Mesh;
+
+		Report.Check( "every face wears it after the rebuild",
+			mesh.Faces.All( f => f.Material == 1 ) );
+
+		// The second dab over the same faces is the ordinary thing a held brush does, and it must
+		// not report an edit — that would put a do-nothing step on the undo stack per mouse-move.
+		var again = MaterialDrop.Brush( studio, studio.Bodies.Single(),
+			Enumerable.Range( 0, mesh.Faces.Count ), "materials/dev/reflectivity_30.vmat",
+			out _, out _ );
+
+		Report.Check( "dragging back over the same faces changes nothing", again == 0, $"{again}" );
+	}
+
+	/// <summary>
+	/// Sweeping one material off the last face holding another retires the slot it left, the same
+	/// rule the single drop follows — a stroke can empty several at once.
+	/// </summary>
+	static void TestBrushReleasesEmptiedSlots()
+	{
+		var studio = Boxed( out var body );
+		var top = FaceIndexFacing( body.Mesh, new Vec3( 0, 0, 1 ) );
+
+		Drop( studio, body, top, "materials/dev/reflectivity_30.vmat", out var first );
+		studio.Rebuild();
+
+		Report.Check( "the first material has a slot", first == 1, $"slot {first}" );
+
+		var live = studio.Bodies.Single();
+
+		var changed = MaterialDrop.Brush( studio, live,
+			Enumerable.Range( 0, live.Mesh.Faces.Count ), "materials/wood/oak.vmat",
+			out var slot, out var released );
+
+		Report.Check( "the second material sweeps every face", changed > 0, $"{changed}" );
+
+		Report.Check( "and the slot the first one had is retired, not left named on nothing",
+			released.Contains( first ), string.Join( ", ", released ) );
+
+		Report.Check( "so only the new material is named",
+			!studio.MaterialNames.ContainsKey( first ) || studio.MaterialNames[first] == "materials/wood/oak.vmat",
+			string.Join( ", ", studio.MaterialNames.Select( kv => $"{kv.Key}={kv.Value}" ) ) );
+
+		Report.Check( "which is on the slot the brush reported", slot >= 0
+			&& studio.MaterialNames.TryGetValue( slot, out var n ) && n == "materials/wood/oak.vmat" );
 	}
 
 	static void TestNoChange()
