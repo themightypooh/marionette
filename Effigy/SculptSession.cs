@@ -74,13 +74,13 @@ public sealed class SculptEdit
 /// <summary>
 /// The sculpt tool, with no cursor in it.
 ///
-/// WHY THIS IS IN THE KERNEL. The editor cannot be compiled outside s&box, so anything living there
+/// WHY THIS IS IN THE KERNEL. The editor cannot be compiled outside s&amp;box, so anything living there
 /// is verified by reading it — and reading it is how a bug that made every parameter edit a silent
 /// no-op survived long enough to look like three unrelated UI faults. Everything a sculpt tool does
 /// between the pointer and the mesh is arithmetic: project a ray, decide whether the cursor has moved
 /// far enough to deserve a sample, fill in the gap when it moved too far, apply, record once. All of
 /// it is testable with no engine anywhere, and all of it is where the bugs are. What is left for the
-/// s&box half is genuinely thin: hand this rays, draw <see cref="DisplayMesh"/>, and draw a ring at
+/// s&amp;box half is genuinely thin: hand this rays, draw <see cref="DisplayMesh"/>, and draw a ring at
 /// <see cref="Hover"/>.
 ///
 /// THE STROKE WORKS ON A MESH, NOT ON THE LEVEL STACK. Evaluating the stack and recording deltas costs

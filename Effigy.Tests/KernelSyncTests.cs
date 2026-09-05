@@ -9,7 +9,7 @@ namespace Effigy.Tests;
 /// <summary>
 /// Guards the one piece of this repo that duplication is unavoidable in.
 ///
-/// s&box compiles a library's `Code/` into a game assembly and its `Editor/` into an editor
+/// s&amp;box compiles a library's `Code/` into a game assembly and its `Editor/` into an editor
 /// assembly, and nothing else - a top-level `Effigy/` is invisible to it. The kernel cannot live in `Code/`
 /// either, because ObjWriter and SmdWriter call File.WriteAllText and the game assembly's sandbox
 /// whitelist does not allow it. So the editor assembly needs its own copy of the kernel, and

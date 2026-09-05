@@ -47,7 +47,7 @@ public sealed class Bone
 }
 
 /// <summary>
-/// A bone hierarchy with a bind pose. Engine-free, like everything else in here — the s&box and
+/// A bone hierarchy with a bind pose. Engine-free, like everything else in here — the s&amp;box and
 /// Godot sides convert at the boundary.
 ///
 /// BONES ARE STORED IN TOPOLOGICAL ORDER: a bone's parent always has a lower index. AddBone

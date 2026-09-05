@@ -37,7 +37,7 @@ public static class Triangulate
 	/// finishes through ClipRing, the clipper that tolerates them; Polygon is simply the wrong door
 	/// and nothing had ever knocked on it with a bridged loop before.
 	///
-	/// What knocks now is s&box's mesh boolean. A half-edge face is one closed loop, so a cut that
+	/// What knocks now is s&amp;box's mesh boolean. A half-edge face is one closed loop, so a cut that
 	/// leaves a hole in a face can only hand it back bridged, and that is the shape a cut arrives
 	/// in — see EffigyMeshBoolean.
 	///

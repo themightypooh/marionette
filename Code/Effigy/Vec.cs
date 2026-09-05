@@ -6,7 +6,7 @@ namespace Effigy;
 /// The kernel's own vector types.
 ///
 /// THIS IS DELIBERATE, NOT AN OVERSIGHT. The kernel exists to be portable — the same source
-/// compiles under s&box, Godot's C#, or a plain console runner, and the engine question stays
+/// compiles under s&amp;box, Godot's C#, or a plain console runner, and the engine question stays
 /// reversible. The moment it references Sandbox.Vector3 or Godot.Vector3 that stops being true and
 /// a port becomes a rewrite.
 ///

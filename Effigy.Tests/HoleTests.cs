@@ -297,7 +297,7 @@ public static class HoleTests
 	/// The other shape a cut arrives in, and the one that produced "the tunnel is there and the
 	/// mouth is covered".
 	///
-	/// s&box's boolean cuts correctly and cannot describe a face with a hole in it, so reading the
+	/// s&amp;box's boolean cuts correctly and cannot describe a face with a hole in it, so reading the
 	/// entered face back gives its outer contour only. The opening survives as a ring of boundary
 	/// edges no face closes, and the flat face sits over it looking solid. This builds exactly that
 	/// defect - a square lid, a ring of walls hanging off an inner loop it does not share - and
@@ -391,7 +391,7 @@ public static class HoleTests
 	///
 	/// This is the assumption EffigyMeshBoolean.AddFaceSplittingBridges rests on, and it is the
 	/// mechanism a cut hole survives by. A half-edge mesh cannot hold a face with a hole in it, so
-	/// s&box's boolean hands a holed face back as ONE loop that visits the two seam vertices twice.
+	/// s&amp;box's boolean hands a holed face back as ONE loop that visits the two seam vertices twice.
 	/// That loop has to triangulate into a ring with a genuine hole in the middle - not a filled
 	/// disc - or a cut produces a tunnel whose opening is painted over, which is exactly what it
 	/// did before the adapter learned to split them.

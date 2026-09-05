@@ -78,7 +78,7 @@ public sealed class BakeOptions
 	/// <summary>
 	/// Flip the green channel. Two conventions exist and differ only in the sign of Y: OpenGL-style
 	/// (+Y up, the default here) and DirectX-style. The wrong one lights every dent as a bump and is
-	/// invisible in a thumbnail, so this is a switch rather than a guess. Which one s&box wants has
+	/// invisible in a thumbnail, so this is a switch rather than a guess. Which one s&amp;box wants has
 	/// to be confirmed by looking at a bake in the engine.
 	/// </summary>
 	public bool FlipGreen;

@@ -12,7 +12,7 @@ namespace Toolshed.Publishing;
 /// Publish the Geppetto library package from the console, with the change notes filled in from the
 /// last commit.
 ///
-/// WHY THIS EXISTS. `tools/ship.sh` puts a change on both git repos in one command, but the s&box
+/// WHY THIS EXISTS. `tools/ship.sh` puts a change on both git repos in one command, but the s&amp;box
 /// package - the copy that reaches people who INSTALLED Geppetto rather than cloned it - was a
 /// four-screen wizard ending in a "Change Title" box pre-filled with "Changes on 2026-09-04",
 /// which says nothing to anyone. The commit message already says what changed. Retyping a worse

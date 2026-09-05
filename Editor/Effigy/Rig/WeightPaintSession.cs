@@ -35,7 +35,7 @@ public sealed class WeightEdit
 /// <summary>
 /// Everything about weight painting that is arithmetic rather than widgets.
 ///
-/// SAME SPLIT AS SculptSession, AND FOR THE SAME REASON: the half that can be tested without s&box
+/// SAME SPLIT AS SculptSession, AND FOR THE SAME REASON: the half that can be tested without s&amp;box
 /// is worth having as its own object, and it turns out to be nearly all of it. The editor's job
 /// reduces to turning a mouse into a ray and drawing a ring.
 ///

@@ -7,7 +7,7 @@ namespace Effigy.Tests;
 /// <summary>
 /// The editor's workflows, replayed headlessly against the real kernel.
 ///
-/// WHY THIS EXISTS. The editor cannot be compiled outside s&box, so its logic used to be verified
+/// WHY THIS EXISTS. The editor cannot be compiled outside s&amp;box, so its logic used to be verified
 /// by reading it — and reading it missed a bug that made every parameter edit a no-op, which in
 /// turn looked like "sketches only work on the Top plane" and "the extrude controls do nothing".
 /// Everything the editor does to the studio is ordinary kernel calls in a particular ORDER, and

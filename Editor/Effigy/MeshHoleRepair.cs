@@ -6,7 +6,7 @@ namespace Effigy;
 /// <summary>
 /// Close a surface whose holes arrived as open boundary loops instead of as holes in a face.
 ///
-/// WHY THIS EXISTS. s&box's mesh boolean cuts correctly and then cannot fully describe what it
+/// WHY THIS EXISTS. s&amp;box's mesh boolean cuts correctly and then cannot fully describe what it
 /// cut. A half-edge face is one closed loop of half-edges, so a face with a hole in it has no
 /// representation, and reading such a face back through GetFaceVertices returns its OUTER contour
 /// only — the inner loop is simply not in the answer. There is no hole API on PolygonMesh to ask

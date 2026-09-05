@@ -342,7 +342,7 @@ public sealed class UVProjectFeature : Feature
 /// itself lives in HoleOperation.
 ///
 /// IT NEEDS A BOOLEAN PROVIDER, like every other cut. Taking material away means recomputing the
-/// surface, and the engine does that inside the s&box editor. Headless, the suite installs a stub -
+/// surface, and the engine does that inside the s&amp;box editor. Headless, the suite installs a stub -
 /// see MergeTests - so this feature can still be tested end to end without one.
 /// </summary>
 public sealed class HoleFeature : Feature

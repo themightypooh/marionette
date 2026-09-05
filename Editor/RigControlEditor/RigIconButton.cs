@@ -17,7 +17,7 @@ internal enum RigIcon
 /// <summary>
 /// A button whose icon is drawn rather than looked up in a font.
 ///
-/// s&box ships CLASSIC Material Icons (addons/base/Assets/fonts/MaterialIcons-Regular.ttf), not
+/// s&amp;box ships CLASSIC Material Icons (addons/base/Assets/fonts/MaterialIcons-Regular.ttf), not
 /// the newer Material Symbols - so a name from the Symbols set silently renders as nothing. The
 /// key button was set to "diamond", which is a Symbols icon and appears nowhere in the editor's
 /// own source: it had been drawing blank.

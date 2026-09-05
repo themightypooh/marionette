@@ -25,7 +25,7 @@ public static class MenuIconTests
 	/// on purpose: one file asserting where the artwork lives is the whole point.
 	///
 	/// The library folder itself is named for however the checkout got it - `Geppetto` in a clone,
-	/// `pooh.geppetto` where s&box installed the published package - so that segment is resolved
+	/// `pooh.geppetto` where s&amp;box installed the published package - so that segment is resolved
 	/// rather than spelled. EffigyWindow never has this problem: it builds the path from
 	/// Project.Current.GetRootPath(), which is the library folder whatever it is called.</summary>
 	static readonly string[] Tail = { "Editor", "EffigyEditor", IconFile };

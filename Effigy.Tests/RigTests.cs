@@ -62,7 +62,7 @@ public static class RigTests
 
 	/// <summary>
 	/// A chain aimed down Z, matching how Primitives builds a cylinder — it runs along Z, centred
-	/// on the origin, which is the Source/s&box convention.
+	/// on the origin, which is the Source/s&amp;box convention.
 	///
 	/// Worth being explicit about: a chain that does not lie along the shape it is skinning binds
 	/// every vertex to whichever bone happens to be nearest, which is a perfectly correct answer to

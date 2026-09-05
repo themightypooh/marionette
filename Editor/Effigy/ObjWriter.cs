@@ -9,7 +9,7 @@ namespace Effigy;
 /// <summary>
 /// Wavefront OBJ export — the DEBUG and interchange format, not the export path.
 ///
-/// THIS IS NO LONGER HOW MODELS REACH s&box. OBJ cannot carry bones or vertex weights, so it stops
+/// THIS IS NO LONGER HOW MODELS REACH s&amp;box. OBJ cannot carry bones or vertex weights, so it stops
 /// being viable the moment a model is rigged, and rigging is in scope. SmdWriter is the export
 /// path for both static and skinned models; see the note at the top of it for why one format
 /// covers both.

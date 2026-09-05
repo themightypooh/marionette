@@ -9,7 +9,7 @@ namespace Effigy;
 /// An 8-bit RGB or RGBA PNG, written by hand.
 ///
 /// WRITTEN BY HAND FOR THE REASON EVERY OTHER FORMAT HERE IS: the kernel has no dependencies, so it
-/// can be dropped into s&box or Godot or a console runner as loose .cs files. ObjWriter, SmdWriter
+/// can be dropped into s&amp;box or Godot or a console runner as loose .cs files. ObjWriter, SmdWriter
 /// and DmxWriter all make the same trade, and a normal map that only the test project could save
 /// would be a bake nobody can use.
 ///
@@ -64,7 +64,7 @@ public static class PngWriter
 	///
 	/// ROW ORDER IS A DECISION AND IT IS MADE HERE. BakedMap holds row 0 at v = 0; a PNG's first
 	/// row is the top of the image. Passing <paramref name="flipVertically"/> writes v = 0 at the
-	/// bottom instead, which is what most engines' UV convention wants. Which one s&box wants is
+	/// bottom instead, which is what most engines' UV convention wants. Which one s&amp;box wants is
 	/// not something this file can know — see BakeOptions.FlipGreen for the other half of the same
 	/// question, and the sample written by the test suite for something to look at.
 	/// </summary>

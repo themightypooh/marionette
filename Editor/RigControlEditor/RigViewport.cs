@@ -30,7 +30,7 @@ internal enum BoneDragMode
 /// (package.local.moviemaker.dll), which midnight_am.sbproj now lists under
 /// Metadata.Compiler.AssemblyReferences. Without this, "posing" only ever moved a detached
 /// GameObject (CreateBoneObjects, or GetBoneObject's returned proxy) that never fed back into
-/// the render - confirmed directly: s&box's own docs call CreateBoneObjects legacy, saying it
+/// the render - confirmed directly: s&amp;box's own docs call CreateBoneObjects legacy, saying it
 /// only ever worked as an intermediate step MovieMaker's *own* internal baking read from, never
 /// as a live "move this and the mesh follows" control on its own.
 /// </summary>

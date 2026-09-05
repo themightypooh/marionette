@@ -22,7 +22,7 @@ public enum BooleanOp
 /// AN INTERFACE RATHER THAN AN IMPLEMENTATION, and that is a decision this repo made a while ago
 /// and wrote down: robust mesh CSG is a decades-old problem — coplanar faces, floating-point
 /// robustness, self-intersection — and a half-working one is worse than none, because it fails on
-/// the interesting cases and does so by producing a mesh rather than an error. s&box ships
+/// the interesting cases and does so by producing a mesh rather than an error. s&amp;box ships
 /// PolygonMesh.PerformBoolean, so the plan of record is an engine-backed implementation there, and
 /// a portable one only if it is ever genuinely needed.
 ///

@@ -26,7 +26,7 @@ public readonly struct MeshHit
 /// PURE GEOMETRY, NO ENGINE SURFACE — which is why it lives here rather than in the editor. The
 /// only thing the viewport contributes is the ray itself (Gizmo.CurrentRay, converted to Vec3);
 /// everything about deciding which triangle it hit is ordinary math that can be built and proven
-/// without s&box anywhere near it.
+/// without s&amp;box anywhere near it.
 ///
 /// Faces are triangulated the same way EffigyPreview builds the render mesh — by Triangulate.Face
 /// — so a click hits exactly the triangle that would actually be drawn there. A different

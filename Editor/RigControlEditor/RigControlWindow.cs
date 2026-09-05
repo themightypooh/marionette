@@ -49,7 +49,7 @@ public sealed class RigControlWindow : DockWindow, IAssetEditor
 	/// A blank document opens with these already loaded. Opening an animation tool to an empty
 	/// black viewport tells you nothing and makes the first move "go find a model", which is the
 	/// least interesting decision in the process. Arms are also what most people are here for:
-	/// first-person animation is the gap in s&box nobody has filled.
+	/// first-person animation is the gap in s&amp;box nobody has filled.
 	/// </summary>
 	public const string DefaultModelPath = "models/first_person/first_person_arms_preview.vmdl";
 

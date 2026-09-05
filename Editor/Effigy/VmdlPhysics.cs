@@ -33,7 +33,7 @@ namespace Effigy;
 /// Base keys `parent_bone`, `surface_prop` and `collision_tags` come off the same citizen prefab.
 ///
 /// WHY THE KERNEL AND NOT THE EDITOR. It is text, it has no engine types in it, and it is the half
-/// that can be checked without s&box — which is the half that was worth testing. The editor's job is
+/// that can be checked without s&amp;box — which is the half that was worth testing. The editor's job is
 /// reduced to splicing the node into the document it already builds.
 /// </summary>
 public static class VmdlPhysics

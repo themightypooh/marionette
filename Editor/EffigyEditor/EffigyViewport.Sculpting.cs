@@ -11,7 +11,7 @@ namespace Marionette.EditorTools;
 /// DELIBERATELY THE THINNEST PART OF THE SCULPT TOOL. Everything with a decision in it — where the
 /// cursor sits on the surface, whether the pointer has travelled far enough to earn a sample, how a
 /// fast drag gets filled in, what a stroke commits, undo — lives in <see cref="SculptSession"/> in
-/// the kernel, where a test can see it. The editor cannot be compiled outside s&box, and reading
+/// the kernel, where a test can see it. The editor cannot be compiled outside s&amp;box, and reading
 /// editor code is how a bug that made every parameter edit a no-op survived long enough to look
 /// like three unrelated UI faults. So this file converts Vector3 to Vec3, calls four methods, and
 /// draws a circle.

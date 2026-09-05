@@ -2127,7 +2127,7 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 	/// <summary>
 	/// The two normal-map conventions, and the size.
 	///
-	/// THESE EXIST AS CONTROLS BECAUSE NOBODY KNOWS THE ANSWER YET. Which way s&box wants the green
+	/// THESE EXIST AS CONTROLS BECAUSE NOBODY KNOWS THE ANSWER YET. Which way s&amp;box wants the green
 	/// channel, and which end of the image v = 0 belongs at, are the two things the suite explicitly
 	/// cannot judge and the sitting is meant to settle. A bake button that could only write one of
 	/// the four combinations would make that sitting impossible to finish - you would find out the

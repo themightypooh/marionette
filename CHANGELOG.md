@@ -78,6 +78,14 @@ forgotten.
   default it renders AS the paint, which is what painting a part and exporting it should
   do. What still has not been checked is the far side of the compile in a real scene.
 
+### Known Issues
+- Animation clips have to be added again every time you open the tool. File → Animation
+  Clips… builds the list that Compile .vmdl bakes in, and that list is not written to the
+  .effigy -- close Effigy and it is empty next time, with nothing said about it. Saving it
+  would mean a model file naming a .riganim that names a model, which is a loop the loader
+  has to be taught to break, so it is a real decision rather than an oversight. Until it is
+  made: add the clips in the same sitting you compile in. `EffigyWindow.cs`
+
 ## v367690 — 2026-09-05
 
 ### Added

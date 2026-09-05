@@ -23,7 +23,7 @@ namespace Effigy;
 /// not a round trip. It also carries exactly one UV channel and no vertex colours; if vertex paint
 /// ever matters, that is the day to look at DMX.
 ///
-/// PORTABILITY. This is an s&box-side format and it deliberately knows nothing about the skeleton
+/// PORTABILITY. This is an s&amp;box-side format and it deliberately knows nothing about the skeleton
 /// beyond what Skeleton already exposes. Godot's equivalent writes bones and weights straight into
 /// an ArrayMesh; it is a peer of this file, not a replacement for it, and neither should be able to
 /// push assumptions back into Skeleton or SkinWeights.

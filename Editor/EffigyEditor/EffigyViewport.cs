@@ -12,7 +12,7 @@ namespace Marionette.EditorTools;
 /// reference planes (Top/Front/Right intersecting at the origin), a selectable origin point,
 /// and a fly camera.
 ///
-/// PLANES ARE DRAWN AS WIREFRAME RECTANGLES using Gizmo.Draw.Line, oriented to s&box's
+/// PLANES ARE DRAWN AS WIREFRAME RECTANGLES using Gizmo.Draw.Line, oriented to s&amp;box's
 /// coordinate system (+x forward, +y left, +z up):
 ///
 ///   Top   = XY plane at z=0,  horizontal, normal +Z
@@ -1270,7 +1270,7 @@ internal sealed partial class EffigyViewport : Widget
 	/// <summary>
 	/// Point the camera down a named axis, keeping whatever the current framing distance is.
 	///
-	/// s&box is +x forward, +y left, +z up, so "Front" looks along -x at the XZ plane and "Right"
+	/// s&amp;box is +x forward, +y left, +z up, so "Front" looks along -x at the XZ plane and "Right"
 	/// looks along +y at the YZ plane — matching how DrawReferencePlanes names the same three.
 	/// </summary>
 	public void SetStandardView( StandardView view )
@@ -1800,7 +1800,7 @@ internal sealed partial class EffigyViewport : Widget
 		}
 	}
 
-	/// <summary>Extract an s&box Rotation from an Effigy Xform's basis columns.
+	/// <summary>Extract an s&amp;box Rotation from an Effigy Xform's basis columns.
 	/// Xform.Y is bone forward (+Y convention), Xform.Z is bone up.</summary>
 	private static Rotation ExtractRotation( Xform xform )
 	{

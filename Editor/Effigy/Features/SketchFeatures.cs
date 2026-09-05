@@ -180,7 +180,7 @@ public abstract class SketchConsumingFeature : Feature
 	/// extrudes" means to anyone. Auto adds to the body whose face the sketch was drawn on, and
 	/// starts a new part when the sketch is on a global plane instead. So building on something
 	/// keeps one part, and sketching in space starts another, with no parameter to set for either.
-	/// </summary>
+	///
 	/// AUTO NEVER REMOVES. Adding and removing look identical from the geometry — the same profile
 	/// pulled the same distance off the same face — so there is nothing for Auto to read that would
 	/// tell them apart, and a rule that guessed would eventually guess a hole into someone's part.
@@ -190,7 +190,7 @@ public abstract class SketchConsumingFeature : Feature
 	/// interface between them uncut, which is cheap and right for a boss standing on a face. There
 	/// is no equivalent shortcut for a cut: taking material away means genuinely recomputing the
 	/// surface, so Remove goes through MeshBoolean and needs a provider installed — the engine's,
-	/// inside the s&box editor. Intersect is not offered because nothing has asked for it yet.
+	/// inside the s&amp;box editor. Intersect is not offered because nothing has asked for it yet.
 	/// </summary>
 	public readonly ChoiceParam Result = new( "Result",
 		new[] { "Auto", "New body", "Add to the body it grows from", "Remove from the body it cuts into" } );

@@ -58,7 +58,7 @@ public readonly struct SnapResult
 ///
 /// THIS LIVES IN THE KERNEL ON PURPOSE. It is sketch-domain maths — point reuse, alignment
 /// inference, grid rounding — with no engine surface at all, and while it sat inside the editor's
-/// viewport file it could not be compiled or tested outside s&box. That is where the bug lived
+/// viewport file it could not be compiled or tested outside s&amp;box. That is where the bug lived
 /// that stopped closed sketches registering as closed: the tolerances were fixed sketch-unit
 /// constants, so on a part one unit across every existing point sat inside the snap radius of
 /// every new click, corners collapsed onto each other, and the profile silently became a branching

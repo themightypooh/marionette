@@ -21,7 +21,7 @@ namespace Marionette.Tools;
 ///
 /// WHAT IT WRITES. An animation-only .vmdl whose Base Model is the clip's source model, plus the
 /// baked .dmx the compiler reads. That is the documented way to add sequences to an existing
-/// model (s&box Model Editor: "Your new VMDL should only hold new animations"). The game then
+/// model (s&amp;box Model Editor: "Your new VMDL should only hold new animations"). The game then
 /// sees a model that looks like the original and has this clip as a named sequence.
 /// </summary>
 internal static class RigAnimExport

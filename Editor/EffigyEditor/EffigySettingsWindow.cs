@@ -7,7 +7,7 @@ namespace Marionette.EditorTools;
 /// <summary>
 /// An on/off switch with a knob that slides between the two ends.
 ///
-/// HAND-PAINTED BECAUSE S&BOX HAS NO SWITCH. It ships <c>Checkbox</c>, which is a tick in a square
+/// HAND-PAINTED BECAUSE S&amp;BOX HAS NO SWITCH. It ships <c>Checkbox</c>, which is a tick in a square
 /// — a different control that reads as "tick this to agree" rather than "this is on". Same reason
 /// EffigyIcons draws its own glyphs: the widget wanted here does not exist in the library, so it
 /// gets drawn, using the same Paint calls every other custom widget in this file already uses.

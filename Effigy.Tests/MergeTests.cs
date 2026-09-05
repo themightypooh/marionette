@@ -135,7 +135,7 @@ public static class MergeTests
 	/// Removing material.
 	///
 	/// There is no boolean in the kernel and there is not going to be one — the plan of record is
-	/// the engine's, installed at startup inside the s&box editor (see MeshBoolean). So what can be
+	/// the engine's, installed at startup inside the s&amp;box editor (see MeshBoolean). So what can be
 	/// verified here is everything EXCEPT the cut arithmetic: that Remove asks for a subtract, that
 	/// it hands over the right two solids the right way round, that the answer replaces the target
 	/// without disturbing its identity, and that every way this can go wrong produces something a

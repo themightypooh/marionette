@@ -27,7 +27,7 @@ public static class Program
 	/// tools/test.sh they landed in Effigy.Tests/out, which is the tracked copy; run as
 	/// `dotnet run --project Effigy.Tests` from the repo root - the obvious thing to type - they
 	/// landed in a second `out/` beside the .sbproj. That one is gitignored, so it is invisible to
-	/// every check that would have caught it, and s&box publishes project files rather than
+	/// every check that would have caught it, and s&amp;box publishes project files rather than
 	/// tracked files: 46 sample OBJs went out in the library package before anyone noticed.
 	///
 	/// CallerFilePath is the compiler telling us where this source file was, which is the one
@@ -628,7 +628,7 @@ public static class Program
 	/// <summary>
 	/// Sketch-driven samples, so the whole chain — sketch, profile, solid, subdivision — can be
 	/// looked at rather than only asserted about. Dropping one of these into ModelDoc is still the
-	/// cheapest way to find out what s&box makes of kernel output.
+	/// cheapest way to find out what s&amp;box makes of kernel output.
 	/// </summary>
 	static void WriteSketchSamples( string outDir )
 	{

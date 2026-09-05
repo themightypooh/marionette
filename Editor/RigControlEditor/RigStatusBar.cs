@@ -52,7 +52,7 @@ internal sealed class RigStatusBar : Editor.StatusBar
 	/// <summary>
 	/// A Button that reports itself to the status bar on hover.
 	///
-	/// s&box's Widget exposes OnMouseEnter/OnMouseLeave as virtuals, not as events, so there's no
+	/// s&amp;box's Widget exposes OnMouseEnter/OnMouseLeave as virtuals, not as events, so there's no
 	/// way to attach a hint to a stock Button from outside - it has to be a subclass. Hence this:
 	/// every control built with it explains itself in the bar, instead of the bar only ever
 	/// describing the viewport (which was the complaint - most of the tool was silent).

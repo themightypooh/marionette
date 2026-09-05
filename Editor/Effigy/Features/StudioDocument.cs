@@ -19,7 +19,7 @@ namespace Effigy;
 ///
 /// TEXT, HAND-WRITTEN, LIKE EVERY OTHER FORMAT IN HERE. ObjWriter, SmdWriter and DmxWriter are all
 /// written by hand and so is the expression evaluator, for the reason the README gives: the kernel
-/// has no dependencies, and it has none because it is meant to be dropped into s&box or Godot or a
+/// has no dependencies, and it has none because it is meant to be dropped into s&amp;box or Godot or a
 /// console runner as loose .cs files. A serializer that reached for a library would be the first
 /// thing to break that. Text also diffs, which matters more than it sounds for a format holding
 /// somebody's model: a corrupt binary is a shrug, a corrupt text file is usually one bad line you

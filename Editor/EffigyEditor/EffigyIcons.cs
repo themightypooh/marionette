@@ -121,7 +121,7 @@ internal enum EffigyIcon
 /// <summary>
 /// Painted icons for the feature-creation strip, drawn rather than looked up in a font.
 ///
-/// Same reasoning as RigIconButton (see Editor/RigControlEditor): s&box ships CLASSIC Material
+/// Same reasoning as RigIconButton (see Editor/RigControlEditor): s&amp;box ships CLASSIC Material
 /// Icons, not the newer Material Symbols, so a name from the Symbols set silently renders as
 /// nothing — and the strip was leaning on generic names like "square", "flip" and "call_made"
 /// that, where they resolved at all, said nothing about the CAD operation behind them. A drawn
