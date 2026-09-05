@@ -35,6 +35,15 @@ forgotten.
 
 ## Unreleased
 
+### Added
+- Paint can cover instead of tinting. A **Blend** dropdown on the paint bar, beside the
+  colour, radius and strength: **Tint** multiplies the paint into the material underneath
+  so the surface shows through, **Replace** paints onto white so what you brushed is the
+  colour that renders. Both are the same multiply -- what moves is the surface under it --
+  which is why covering needed no shader in the end. A face you dropped a material on
+  keeps that material either way; Blend only moves the slots that had nothing on them.
+  `PaintFeature.cs`, `EffigyPaintBar.cs`
+
 ### Fixed
 - A compiled model arrives wearing a material instead of the bright red missing-material
   shader. Every material slot the mesh actually uses is now named in the model's remap

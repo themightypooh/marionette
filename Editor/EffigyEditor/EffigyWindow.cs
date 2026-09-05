@@ -545,7 +545,11 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 
 		// The paint bar, in the same floating spot the sculpt bar keeps — it is about the stroke
 		// you are making, not the tool you picked.
-		_paintBar = new EffigyPaintBar( _viewport.Canvas ) { Changed = OnPaintBarChanged };
+		_paintBar = new EffigyPaintBar( _viewport.Canvas )
+		{
+			Changed = OnPaintBarChanged,
+			BlendChanged = OnPaintBlendChanged,
+		};
 
 		_viewport.AddPaintOverlay( _paintBar );
 
@@ -1563,7 +1567,7 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 		session.Radius = session.SuggestedRadius;
 
 		_viewport.BeginPaint( session, slot => _studio.MaterialNames.TryGetValue( slot, out var name ) ? name : null );
-		_paintBar.Bind( session );
+		_paintBar.Bind( session, feature );
 		_viewport.RefreshPaintPreview();
 
 		SetPrompt( "Paint: drag on the model. Colour, size and strength are on the bar below." );
@@ -1618,6 +1622,22 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 	private void OnPaintSettingsChanged() => _paintBar?.Refresh();
 
 	private void OnPaintBarChanged() => _viewport?.Update();
+
+	/// <summary>
+	/// Blend moved, which is a DOCUMENT edit rather than a brush setting.
+	///
+	/// It changes nothing on screen - the viewport already composites vertex colour over the
+	/// material the same way both settings do - and everything about the compiled model, which is
+	/// exactly the shape of edit that used to leave the title bar saying there was nothing to save.
+	/// </summary>
+	private void OnPaintBlendChanged()
+	{
+		if ( !_dirty )
+		{
+			_dirty = true;
+			UpdateTitle();
+		}
+	}
 
 	// --- grease pencil -------------------------------------------------------------------------
 

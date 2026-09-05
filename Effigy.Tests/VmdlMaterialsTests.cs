@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Effigy;
@@ -29,6 +29,9 @@ public static class VmdlMaterialsTests
 		Section( "vmdl materials: the node, and what it does with nothing" );
 		TestAlwaysWritesTheList();
 		TestDisplayNameIsNotARemap();
+
+		Section( "vmdl materials: tint or cover" );
+		TestBlendChoosesTheFallback();
 
 		Section( "vmdl materials: several slots, several spellings" );
 		TestAliases();
@@ -134,6 +137,56 @@ public static class VmdlMaterialsTests
 			remaps.Any( r => r.From == "anodised" )
 			&& remaps.All( r => r.To == VmdlMaterials.DefaultMaterial ),
 			string.Join( ", ", remaps.Select( r => $"{r.From}->{r.To}" ) ) );
+	}
+
+	/// <summary>
+	/// Paint's Blend choice decides what an unbound slot compiles to.
+	///
+	/// Both settings are the same vertex-colour multiply - what moves is the surface underneath it.
+	/// Against white a multiply IS the paint colour, which is the covering look without a shader.
+	/// </summary>
+	static void TestBlendChoosesTheFallback()
+	{
+		var studio = new PartStudio();
+		var box = studio.Add( new PrimitiveFeature() );
+		box.SizeX.Value = box.SizeY.Value = box.SizeZ.Value = 2f;
+
+		var paint = studio.Add( new PaintFeature() );
+		studio.Rebuild();
+
+		Check( "a paint layer tints by default", paint.Blend.Value == "Tint", paint.Blend.Value );
+
+		Check( "so an unbound slot takes the default material",
+			VmdlMaterials.FallbackFor( studio ) == VmdlMaterials.DefaultMaterial );
+
+		paint.Blend.Index = Array.IndexOf( paint.Blend.Options, "Replace" );
+
+		Check( "asking it to cover swaps the surface for white",
+			VmdlMaterials.FallbackFor( studio ) == VmdlMaterials.ReplaceMaterial,
+			VmdlMaterials.FallbackFor( studio ) );
+
+		var remaps = VmdlMaterials.Remaps( studio.ToMesh(), studio.NameForSlot, studio.MaterialNames,
+			VmdlMaterials.FallbackFor( studio ) );
+
+		Check( "and that is what reaches the remap list",
+			remaps.Count == 1 && remaps[0].To == VmdlMaterials.ReplaceMaterial,
+			string.Join( ", ", remaps.Select( r => $"{r.From}->{r.To}" ) ) );
+
+		// A BOUND SLOT IS NOT TOUCHED. Dropping a material on a face is a deliberate choice, and
+		// covering it is not what Replace is for - it moves the slots that had nothing.
+		var bound = Painted( out var mesh, slot: 1, "materials/diner/diner_tile_floor.vmat" );
+		var boundRemaps = VmdlMaterials.Remaps( mesh, bound.NameForSlot, bound.MaterialNames,
+			VmdlMaterials.ReplaceMaterial );
+
+		Check( "a slot with a material dropped on it still points at that material",
+			boundRemaps.Any( r => r.To == "materials/diner/diner_tile_floor.vmat" ),
+			string.Join( ", ", boundRemaps.Select( r => $"{r.From}->{r.To}" ) ) );
+
+		// A layer that produced nothing does not get a vote.
+		paint.Suppressed = true;
+
+		Check( "a suppressed paint layer stops asking for it",
+			VmdlMaterials.FallbackFor( studio ) == VmdlMaterials.DefaultMaterial );
 	}
 
 	static void TestAliases()

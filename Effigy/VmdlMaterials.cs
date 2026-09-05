@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Effigy;
@@ -55,19 +56,45 @@ public static class VmdlMaterials
 	public const string DefaultMaterial = "materials/default.vmat";
 
 	/// <summary>
+	/// What an unbound slot compiles to when a paint layer asks to cover rather than tint.
+	///
+	/// White albedo, so the vertex-colour multiply lands on 1.0 and the result IS the paint colour.
+	/// That is the whole trick: covering needs no shader, only a surface with nothing of its own to
+	/// show through. Verified white rather than assumed - its generated colour texture is the same
+	/// asset <c>bright_100.vmat</c> uses.
+	/// </summary>
+	public const string ReplaceMaterial = "materials/default/white.vmat";
+
+	/// <summary>
+	/// Which of the two an unbound slot in this studio should take.
+	///
+	/// Whole-document by design: see PaintFeature.Blend. A suppressed or failed paint layer does
+	/// not get a vote, the same rule the rest of the exporters apply to a feature that produced no
+	/// geometry.
+	/// </summary>
+	public static string FallbackFor( PartStudio studio )
+	{
+		var covering = studio?.Features?
+			.OfType<PaintFeature>()
+			.Any( f => f.Error is null && !f.Suppressed && f.Blend.Value == "Replace" ) ?? false;
+
+		return covering ? ReplaceMaterial : DefaultMaterial;
+	}
+
+	/// <summary>
 	/// The MaterialGroupList node, indented to sit among a RootNode's children.
 	///
 	/// ALWAYS A NODE, even when nothing is bound. An omitted list is what ModelDoc replaces with
 	/// the global default, and every slot the mesh uses is named here explicitly - bound ones to
-	/// their vmat, the rest to <see cref="DefaultMaterial"/> - so nothing is left to resolve on a
-	/// name no asset answers to.
+	/// their vmat, the rest to whichever fallback <see cref="FallbackFor"/> picked - so nothing is
+	/// left to resolve on a name no asset answers to.
 	/// </summary>
 	public static string GroupList( PartStudio studio, PolyMesh mesh )
 	{
 		if ( studio is null )
 			return GroupList( mesh, null, null );
 
-		return GroupList( mesh, studio.NameForSlot, studio.MaterialNames );
+		return GroupList( mesh, studio.NameForSlot, studio.MaterialNames, FallbackFor( studio ) );
 	}
 
 	/// <summary>
@@ -75,9 +102,9 @@ public static class VmdlMaterials
 	/// slot, and which slots have a vmat bound.
 	/// </summary>
 	public static string GroupList( PolyMesh mesh, Func<int, string> nameForSlot,
-		IReadOnlyDictionary<int, string> materialNames )
+		IReadOnlyDictionary<int, string> materialNames, string fallback = DefaultMaterial )
 	{
-		var remaps = Remaps( mesh, nameForSlot, materialNames );
+		var remaps = Remaps( mesh, nameForSlot, materialNames, fallback );
 		var sb = new StringBuilder();
 
 		sb.Append( "\t\t\t{\n" );
@@ -114,7 +141,7 @@ public static class VmdlMaterials
 	/// slots actually went out.
 	/// </summary>
 	public static List<(string From, string To)> Remaps( PolyMesh mesh, Func<int, string> nameForSlot,
-		IReadOnlyDictionary<int, string> materialNames )
+		IReadOnlyDictionary<int, string> materialNames, string fallback = DefaultMaterial )
 	{
 		var remaps = new List<(string, string)>();
 		var seenFrom = new HashSet<string>( StringComparer.OrdinalIgnoreCase );
@@ -131,7 +158,7 @@ public static class VmdlMaterials
 			if ( !TryBoundVmat( slot, materialNames, out var target ) )
 			{
 				if ( seenFrom.Add( written ) )
-					remaps.Add( (written, DefaultMaterial) );
+					remaps.Add( (written, string.IsNullOrWhiteSpace( fallback ) ? DefaultMaterial : fallback) );
 
 				continue;
 			}

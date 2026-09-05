@@ -31,7 +31,28 @@ public sealed class PaintFeature : Feature
 
 	public readonly BodySelectionParam Bodies = new( "Body" );
 
-	public override IReadOnlyList<IParam> Parameters => new IParam[] { Bodies };
+	/// <summary>
+	/// Whether the paint tints what is underneath it or stands in for it.
+	///
+	/// BOTH ARE THE SAME ONE MULTIPLY. Vertex colour is a tint and there is no shader here to make
+	/// it anything else - what changes is the surface it multiplies into. Tint keeps
+	/// <c>materials/default.vmat</c>, whose colour texture carries the default surface, so the
+	/// paint darkens and colours that. Replace binds <c>materials/default/white.vmat</c> instead,
+	/// and a multiply against white IS the paint colour, so it reads as covering.
+	///
+	/// WHY NOT A SHADER, which is what docs/dev/PAINTING.md assumed covering would need: it would,
+	/// to composite by alpha over an arbitrary material. Swapping the material underneath gets the
+	/// covering LOOK for a slot nobody has bound, which is the case that was compiling to red
+	/// anyway. A slot with a material dropped on it is untouched by this either way - the drop is
+	/// a deliberate choice and paint tints it.
+	///
+	/// IT ONLY MOVES UNBOUND SLOTS, and it is read across the whole document rather than per body:
+	/// what an unbound slot compiles to is one line in the model's remap list, and there is one of
+	/// those per model. Setting any paint layer to Replace sets it for the export.
+	/// </summary>
+	public readonly ChoiceParam Blend = new( "Blend", new[] { "Tint", "Replace" } );
+
+	public override IReadOnlyList<IParam> Parameters => new IParam[] { Bodies, Blend };
 
 	/// <summary>
 	/// The strokes, in the order they were painted.
