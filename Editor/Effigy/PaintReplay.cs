@@ -25,6 +25,9 @@ public static class PaintReplay
 	/// filtering across a seam finds colour there instead of the gutter. Same figure the bake uses.</summary>
 	const int DilatePasses = 4;
 
+	/// PARKED. This is the texture half - see the note on PaintCanvas. The live path is
+	/// <see cref="ReplayColors"/> just below, which is what PaintFeature and PaintSession use.
+	///
 	/// <summary>
 	/// Replay every stroke, in order, onto a fresh canvas. The order is the whole point — colour
 	/// blending does not commute — and this preserves it exactly.

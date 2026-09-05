@@ -6,6 +6,16 @@ namespace Effigy;
 /// <summary>
 /// An RGBA canvas a paint stroke composites into, held CPU-side.
 ///
+/// PARKED, NOT LIVE. Nothing in the shipped tool calls this - the paint that ships is vertex
+/// colour, and its path is PaintReplay.ReplayColors. This texture side is reachable only from its
+/// own tests. It is kept rather than deleted because docs/dev/PAINTING.md §6 closes the question
+/// "for now" and names texels as the better long-term answer: resolution independent of mesh
+/// density, exporting as a real texture. Reviving it needs the authoring half nobody has written -
+/// bake the canvas to PNG, compile a .vtex, generate a .vmat, bind the slot.
+///
+/// SO DO NOT READ IT AS THE PAINT PIPELINE. If you are following how a stroke reaches the screen,
+/// you want PaintReplay.ReplayColors and PaintFeature, not this.
+///
 /// DELIBERATELY THE SAME SHAPE AS BakedMap. A baked normal map is a `byte[] Rgb` plus a `bool[]`
 /// mask, written straight out by PngWriter; this is a `byte[] Rgba`, four bytes a texel with the
 /// alpha the normal map has no use for. Matching that shape means the PNG writer grows one colour
