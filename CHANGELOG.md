@@ -35,6 +35,10 @@ forgotten.
 
 ## Unreleased
 
+Nothing yet.
+
+## v367690 — 2026-09-05
+
 ### Added
 - Soft bones are reachable. Select a bone, tick **Soft** in the Rig panel, and set its
   stiffness, damping, weight and cone. The solver behind them shipped a while ago and
