@@ -110,11 +110,22 @@ echo ""
 # reassurance that anything is happening, but the revision it reports has to be read back. tee to
 # a file rather than /dev/tty, which does not exist everywhere this runs.
 log=$( mktemp )
-trap 'rm -f "$log"' EXIT
+status=$( mktemp )
+trap 'rm -f "$log" "$status"' EXIT
 
-tools/publish.sh --commit | tee "$log"
+# THE EXIT CODE HAS TO COME OUT OF THE PIPE. `publish.sh | tee` reports tee's status, which is
+# always 0, so a refused upload read here as a clean run that merely forgot to name a revision.
+# Writing $? into a file inside the group is the POSIX way to keep both the streaming and the
+# answer - and the streaming is most of the reassurance that anything is happening.
+{ tools/publish.sh --commit; echo $? > "$status"; } | tee "$log"
 
 out=$( cat "$log" )
+
+if [ "$( cat "$status" )" -ne 0 ]; then
+	echo ""
+	echo "the publish failed - see above. Nothing was stamped and nothing was pushed for it." >&2
+	exit 1
+fi
 
 # publish.sh's last line is "revision <id> <moved>", meant for exactly this.
 set -- $( printf '%s' "$out" | sed -n 's/^revision //p' | tail -1 )

@@ -130,7 +130,39 @@ public static class GeppettoPublish
 			}
 
 			Log.Info( "[publish] uploading..." );
+
+			var toUpload = publisher.MissingFileCount;
+
 			await publisher.UploadFiles();
+
+			// UPLOADFILES DOES NOT THROW ON A REJECTED FILE. Every failure is logged by the engine
+			// and the task completes exactly as it does on success, so "it returned" says nothing
+			// about whether anything landed. On 2026-09-05 an expired editor login sent all 450
+			// files back 401 Unauthorized, and because nothing threw, this ran on to report the
+			// unmoved version as "byte-identical content" - an explanation for a publish that had
+			// never happened, which cost hours pointed at the wrong thing.
+			//
+			// The manifest is the one that knows: it counts what has NOT arrived, and the upload
+			// loop walks that number down as files land. If it has not moved, neither did they.
+			var stillMissing = publisher.MissingFileCount;
+
+			if ( toUpload > 0 && stillMissing >= toUpload )
+			{
+				Log.Error( $"[publish] NOTHING UPLOADED - all {toUpload} files were rejected, and "
+					+ "nothing was published." );
+				Log.Error( "[publish] the usual cause is an expired editor login: the uploads come "
+					+ "back 401 Unauthorized, one logged error per file above this line. Sign out "
+					+ "and back in, or restart the editor, then run this again." );
+				return;
+			}
+
+			if ( stillMissing > 0 )
+			{
+				Log.Error( $"[publish] only {toUpload - stillMissing} of {toUpload} files uploaded "
+					+ $"- {stillMissing} were rejected, see the errors above. Stopping rather than "
+					+ "publishing a package with holes in it." );
+				return;
+			}
 
 			await publisher.Publish( null, CancellationToken.None );
 
@@ -145,9 +177,16 @@ public static class GeppettoPublish
 
 			if ( before is not null && after is not null && after.VersionId == before.VersionId )
 			{
-				Log.Warning( $"[publish] version did not move (still {after.VersionId}) - the backend "
-					+ "accepted this without making a new revision, which is what publishing "
-					+ "byte-identical content does." );
+				// EVERY FILE UPLOADED TO GET HERE, so byte-identical content is now the likely
+				// reading rather than a guess - but it is still a reading, and this line used to
+				// state it as fact about a run where nothing had uploaded at all. The manifest can
+				// be refused on its own (`PublishManifest: Unauthorized`), which no count here can
+				// see. So say what is known, then point at the log rather than closing the case.
+				Log.Warning( $"[publish] version did not move (still {after.VersionId}). All "
+					+ $"{toUpload} files uploaded, so this is most likely byte-identical content - "
+					+ "the backend accepts that without making a new revision." );
+				Log.Warning( "[publish] if that is not what you expected, read the editor log for "
+					+ "errors around the publish before running it again." );
 			}
 			else
 			{

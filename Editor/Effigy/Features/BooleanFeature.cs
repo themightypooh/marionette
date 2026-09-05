@@ -80,7 +80,7 @@ public sealed class BooleanFeature : Feature
 				"No tool body is chosen",
 				Op == BooleanOp.Union
 					? "A union needs to know which bodies to merge, and none have been picked."
-					: $"A {Name( Op )} needs to know which body is doing the cutting, and none has been picked.",
+					: $"A {OpName( Op )} needs to know which body is doing the cutting, and none has been picked.",
 				"Click a body in the Parts list, or in the viewport, to use it as the tool" );
 		}
 
@@ -224,7 +224,7 @@ public sealed class BooleanFeature : Feature
 		}
 	}
 
-	static string Name( BooleanOp op ) => op switch
+	static string OpName( BooleanOp op ) => op switch
 	{
 		BooleanOp.Subtract => "subtract",
 		BooleanOp.Intersect => "intersect",

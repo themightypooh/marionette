@@ -96,8 +96,11 @@ while [ "$i" -lt 90 ]; do
 	# NOT "published": that line is logged before the version is read back, and the read waits for
 	# the backend to settle, so stopping there printed the run without its result - the one line
 	# that says whether a new revision exists.
+	# "were rejected" ends the run too, and it has to be listed here or a refused upload is not an
+	# ending this loop knows about - it would poll the full three minutes and then print a log whose
+	# result line never came.
 	case "$log" in
-		*"DRY RUN"*|*"[publish] version"*|*"version did not move"*|*"failed:"*) break ;;
+		*"DRY RUN"*|*"[publish] version"*|*"version did not move"*|*"failed:"*|*"were rejected"*) break ;;
 	esac
 
 	i=$(( i + 1 ))
@@ -111,6 +114,11 @@ echo ""
 case "$log" in
 	*"failed:"*)
 		echo "the publish did not go through - see above." >&2
+		exit 1 ;;
+	*"were rejected"*)
+		echo "the upload was refused - NOTHING was published, and the revision below is the old" >&2
+		echo "one that is still live. An expired editor login is the usual cause: sign out and" >&2
+		echo "back in, or restart the editor, then run this again." >&2
 		exit 1 ;;
 esac
 
