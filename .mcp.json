@@ -2,7 +2,7 @@
   "mcpServers": {
     "sbox": {
       "type": "http",
-      "url": "http://127.0.0.1:9090/sbox-mcp",
+      "url": "http://127.0.0.1:7269/mcp",
       "timeout": 30000
     }
   }
