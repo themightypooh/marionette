@@ -17,12 +17,73 @@ public static class PaintDocumentTests
 {
 	public static void Run()
 	{
-		Section( "paint: strokes survive the document round trip" );
+				Report.Section( "paint: a bare box is reachable" );
+		TestBareBoxIsReachable();
+
+Section( "paint: strokes survive the document round trip" );
 		TestStrokesRoundTrip();
 		TestOrderIsPreserved();
 		TestEmptyPathRoundTrips();
 		TestSavingTwiceIsIdentical();
 		TestStaleness();
+	}
+
+
+	/// <summary>
+	/// THE CASE NOTHING COVERED: a bare box, which is the first thing anybody paints.
+	///
+	/// Every other paint test and every sample subdivides first, so all of them missed that the
+	/// default brush could not reach a single vertex on an unsubdivided part - it painted nothing,
+	/// silently, and looked broken. The radius is floored at the vertex spacing now.
+	/// </summary>
+	static void TestBareBoxIsReachable()
+	{
+		var studio = new PartStudio();
+		var box = studio.Add( new PrimitiveFeature() );
+		box.SizeX.Value = box.SizeY.Value = box.SizeZ.Value = 1f;
+		studio.Rebuild();
+
+		var mesh = studio.Bodies[0].Mesh;
+		var session = new PaintSession( mesh );
+
+		Report.Check( "a 1-unit box really does have only its corners",
+			mesh.Positions.Count == 8, $"{mesh.Positions.Count} vertices" );
+
+		// The old rule, kept here as the thing that must never come back.
+		var boundsOnly = mesh.BoundsDiagonal / 12f;
+
+		Report.Check( "a twelfth of the diagonal could not reach a corner from a face centre",
+			boundsOnly < 0.5f, $"{boundsOnly}" );
+
+		Report.Check( "the suggested radius now clears the vertex spacing",
+			session.SuggestedRadius >= session.MeanEdgeLength * 0.5f,
+			$"radius {session.SuggestedRadius}, spacing {session.MeanEdgeLength}" );
+
+		// The point of all of it: a dab at the middle of the top face colours something.
+		session.Radius = session.SuggestedRadius;
+
+		var hit = session.Hover( new Vec3( 0, 0, 10f ), new Vec3( 0, 0, -1f ) );
+
+		Report.Check( "a ray straight down finds the top face", hit is not null );
+
+		Report.Check( "and the part is flagged as coarse, so the editor can say so", session.IsCoarse );
+
+		if ( hit is { } h )
+		{
+			session.BeginStroke( new Vec3( 0, 0, 10f ), new Vec3( 0, 0, -1f ) );
+			session.EndStroke();
+
+			var painted = 0;
+
+			for ( var i = 0; i < session.Colors.Length; i++ )
+			{
+				if ( session.Colors[i].w > 0f )
+					painted++;
+			}
+
+			Report.Check( "a single dab on a bare box colours at least one vertex", painted > 0,
+				$"{painted} of {session.Colors.Length}" );
+		}
 	}
 
 	static PaintStroke MakeStroke( float r, float g, float b, float a, float radius, float strength,

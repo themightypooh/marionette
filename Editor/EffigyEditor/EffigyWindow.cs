@@ -1584,7 +1584,15 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 		_paintBar.Bind( session, feature );
 		_viewport.RefreshPaintPreview();
 
-		SetPrompt( "Paint: drag on the model. Colour, size and strength are on the bar below." );
+		// SAY IT AT THE DOOR ON A COARSE PART. Paint colours vertices, so a bare box has eight
+		// places for colour to land and a stroke reads as a gradient across whole faces rather than
+		// a mark where the cursor was. That is the tool working as designed and it looks exactly
+		// like the tool being broken, which is what it looked like until somebody said so here.
+		SetPrompt( session.IsCoarse
+			? $"Paint: drag on the model. This body has only {targets[0].Mesh.Positions.Count} vertices "
+				+ "and paint colours vertices — add a Subdivide above the Paint feature for a "
+				+ "brush that follows the cursor instead of tinting whole faces."
+			: "Paint: drag on the model. Colour, size and strength are on the bar below." );
 	}
 
 	/// <summary>

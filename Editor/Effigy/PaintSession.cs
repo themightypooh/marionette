@@ -99,15 +99,69 @@ public sealed class PaintSession
 	/// A starting radius that suits this model: a twelfth of the diagonal, the same argument
 	/// SculptSession makes — Effigy's units are dimensionless, so a fixed default is the whole model
 	/// on one part and invisible on the next.
+	///
+	/// FLOORED AT THE VERTEX SPACING, which the diagonal on its own does not account for and which
+	/// made the brush do NOTHING on the most ordinary part there is. Paint colours the vertices
+	/// inside the brush sphere; a 1-unit box has eight of them, all at the corners, so a dab in the
+	/// middle of a face sits 0.707 away from the nearest one while a twelfth of the diagonal is
+	/// 0.144. The brush reached no vertex at all, painted nothing, and said nothing about it — and
+	/// every test and sample subdivides first, so nothing caught it.
+	///
+	/// This does not make paint FINE on a coarse mesh - it cannot, the colours live on the vertices
+	/// - but it makes the tool do something you can see, which is the difference between a coarse
+	/// result and a broken one. <see cref="IsCoarse"/> is what says the rest out loud.
 	/// </summary>
 	public float SuggestedRadius
 	{
 		get
 		{
 			var diagonal = _mesh.BoundsDiagonal;
-			return diagonal > 1e-6f ? diagonal / 12f : 0.25f;
+			var fromBounds = diagonal > 1e-6f ? diagonal / 12f : 0.25f;
+			var spacing = MeanEdgeLength;
+
+			return spacing > 1e-6f ? MathF.Max( fromBounds, spacing * 0.75f ) : fromBounds;
 		}
 	}
+
+	/// <summary>
+	/// The average distance between neighbouring vertices — how far apart the things paint can
+	/// actually colour are.
+	/// </summary>
+	public float MeanEdgeLength
+	{
+		get
+		{
+			if ( _mesh?.Faces is null || _mesh.Positions is null )
+				return 0f;
+
+			var total = 0f;
+			var count = 0;
+
+			foreach ( var face in _mesh.Faces )
+			{
+				for ( var c = 0; c < face.Count; c++ )
+				{
+					var a = _mesh.Positions[face.Indices[c]];
+					var b = _mesh.Positions[face.Indices[(c + 1) % face.Count]];
+
+					total += (b - a).Length;
+					count++;
+				}
+			}
+
+			return count > 0 ? total / count : 0f;
+		}
+	}
+
+	/// <summary>
+	/// Whether this mesh is too coarse for paint to look like paint.
+	///
+	/// The threshold is the mesh's own spacing rather than a vertex count: 200 vertices is dense on
+	/// a doorknob and nothing on a terrain. If a brush has to be as wide as the gaps between
+	/// vertices to touch any of them, every dab lands on one or two and the result is a gradient
+	/// across whole faces rather than a mark where the cursor was.
+	/// </summary>
+	public bool IsCoarse => _mesh?.Positions is { Count: > 0 } && _mesh.Positions.Count < 64;
 
 	/// <summary>The mesh the strokes land on, exposed so the editor can build a preview from it —
 	/// the same surface the brush works on, which is the one the user is looking at.</summary>

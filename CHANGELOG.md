@@ -56,6 +56,15 @@ forgotten.
   `PaintFeature.cs`, `EffigyPaintBar.cs`
 
 ### Fixed
+- The paint brush lands on a part you have not subdivided. Paint colours vertices, and the
+  default brush was a twelfth of the model's diagonal -- on a 1-unit box that is 0.144, while
+  the nearest corner to the middle of a face is 0.707 away, so the brush reached no vertex at
+  all. It painted nothing and said nothing about it, which reads as the tool being broken
+  rather than as the mesh being too coarse to hold the paint. The starting radius now clears
+  the spacing between vertices. `PaintSession.cs`
+- Entering Paint on a coarse body says so, and says what to do: a bare box has eight places
+  for colour to land, so a stroke tints whole faces instead of following the cursor. Add a
+  Subdivide above the Paint feature and the same brush gets as fine as the mesh.
 - Dragging a multi-bone selection in Marionette no longer moves one bone twice as far as
   the rest. A group drag is applied to the selected bones that nothing above them is
   carrying -- but it only checked each bone's immediate parent, so selecting a bone and
