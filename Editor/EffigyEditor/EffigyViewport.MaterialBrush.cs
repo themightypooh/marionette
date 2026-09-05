@@ -1,4 +1,4 @@
-using Editor;
+﻿using Editor;
 using Effigy;
 using Sandbox;
 using System;
@@ -22,10 +22,11 @@ namespace Marionette.EditorTools;
 /// story ordinary — a material dab is the same kind of edit as dropping a material, and undoes the
 /// same way — instead of inventing a second undo path that only the brush knows about.
 ///
-/// A DAB PER FRAME, NOT PER STROKE. The faces under the ring change as it moves, and each batch
-/// has to reach the document while the drag is still happening or the model would not follow the
-/// brush. MaterialDrop.Brush reports no change for faces already on the slot, which is what stops
-/// a held brush from putting an undo step on the stack every frame it does not move.
+/// A DAB PER FRAME, AN UNDO STEP PER STROKE. The faces under the ring change as it moves, and each
+/// batch has to reach the document while the drag is still happening or the model would not follow
+/// the brush — so dabs are frequent. What a person expects to take back is the GESTURE, though, so
+/// undo is recorded once, at the press, by <see cref="MaterialStrokeStarted"/>. Recording it per
+/// dab instead would turn one sweep into fifty Ctrl+Z presses.
 /// </summary>
 internal sealed partial class EffigyViewport
 {
@@ -36,6 +37,17 @@ internal sealed partial class EffigyViewport
 	/// <summary>Raised with the faces one dab covered. The window assigns them and rebuilds; the
 	/// list is reused between dabs, so it must be consumed rather than kept.</summary>
 	public Action<IReadOnlyList<int>> MaterialDabbed { get; set; }
+
+	/// <summary>
+	/// Raised once when a drag begins, BEFORE its first dab, so the window can record undo.
+	///
+	/// ONCE PER STROKE AND NOT PER DAB, which is the whole reason it is a separate signal. A dab
+	/// fires every frame the brush moves, so recording undo there would make one sweep across a
+	/// part into fifty Ctrl+Z presses; recording it nowhere - which is what this did at first -
+	/// leaves the stroke unundoable and sends Ctrl+Z back past it to whatever came before. The
+	/// gesture is the unit a person would expect to take back, so the gesture is what is recorded.
+	/// </summary>
+	public Action MaterialStrokeStarted { get; set; }
 
 	private MeshHit? _materialCursor;
 	private bool _materialStroking;
@@ -70,8 +82,12 @@ internal sealed partial class EffigyViewport
 
 			_materialCursor = MaterialBrush.Hover( origin, direction );
 
-			if ( Gizmo.WasLeftMousePressed )
+			// Before the first dab, so the snapshot is the state the stroke is about to change.
+			if ( Gizmo.WasLeftMousePressed && !_materialStroking )
+			{
 				_materialStroking = true;
+				MaterialStrokeStarted?.Invoke();
+			}
 
 			if ( _materialStroking && Gizmo.IsLeftMouseDown && _materialCursor is { } hit )
 			{

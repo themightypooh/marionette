@@ -554,6 +554,7 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 		_materialBrushBar = new EffigyMaterialBrushBar( _viewport.Canvas ) { Changed = OnPaintBarChanged };
 		_viewport.AddPaintOverlay( _materialBrushBar );
 		_viewport.MaterialDabbed = OnMaterialDabbed;
+		_viewport.MaterialStrokeStarted = RecordUndo;
 
 		_viewport.AddPaintOverlay( _paintBar );
 
