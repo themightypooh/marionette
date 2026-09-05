@@ -551,6 +551,10 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 			BlendChanged = OnPaintBlendChanged,
 		};
 
+		_materialBrushBar = new EffigyMaterialBrushBar( _viewport.Canvas ) { Changed = OnPaintBarChanged };
+		_viewport.AddPaintOverlay( _materialBrushBar );
+		_viewport.MaterialDabbed = OnMaterialDabbed;
+
 		_viewport.AddPaintOverlay( _paintBar );
 
 		_viewport.PaintStrokeFinished = OnPaintStrokeFinished;
@@ -1199,6 +1203,7 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 	// --- paint mode ---------------------------------------------------------------------------
 
 	private EffigyPaintBar _paintBar;
+	private EffigyMaterialBrushBar _materialBrushBar;
 
 	/// <summary>The feature being painted, so finishing knows what to mark dirty.</summary>
 	private PaintFeature _paintFeature;
@@ -1460,6 +1465,14 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 			Clicked = AddPaint,
 		} );
 
+		stage.Add( new EffigyStageTool
+		{
+			Icon = EffigyIcon.FaceMaterial,
+			Label = "Material",
+			Tip = "Material brush — drag to lay the Materials browser's selection onto faces",
+			Clicked = EnterMaterialBrush,
+		} );
+
 		return new List<EffigyStage> { stage };
 	}
 
@@ -1572,6 +1585,150 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 
 		SetPrompt( "Paint: drag on the model. Colour, size and strength are on the bar below." );
 	}
+
+	/// <summary>
+	/// Step into the material brush.
+	///
+	/// NO FEATURE IS CREATED, unlike Paint. A material dab is the same history edit dropping a
+	/// material makes — FaceMaterialEdit assignments onto a slot — so the brush is a way of making
+	/// those in bulk rather than a new kind of thing in the tree. Which is also why there is nothing
+	/// to re-enter: leaving and coming back picks up wherever the document got to.
+	/// </summary>
+	private void EnterMaterialBrush()
+	{
+		if ( _viewport is null || _studio is null )
+			return;
+
+		LeaveCurrentWorkspace();
+
+		// ONE BODY AT A TIME, the same door refusal Paint makes and for a plainer reason: the
+		// session builds one BVH over one mesh, and "which body did the ray hit" is a question it
+		// would have to answer before it could answer any other.
+		if ( _studio.Bodies.Count != 1 )
+		{
+			SetPrompt( _studio.Bodies.Count == 0
+				? "The material brush needs a body to paint on — add a primitive or extrude a sketch first."
+				: "The material brush works on one body at a time — hide the others in the Parts list." );
+			return;
+		}
+
+		var body = _studio.Bodies[0];
+
+		BarMode = EffigyBarMode.Paint;
+
+		_stageBar.Mode = "MATERIAL";
+		_stageBar.SetFinish( "Finish", FinishMaterialBrush );
+		_stageBar.SetStages( BuildMaterialBrushStages() );
+
+		_dialog?.Close();
+
+		var session = new MaterialBrushSession( body.Mesh );
+		session.Radius = session.SuggestedRadius;
+
+		_materialBrushBodyId = body.Id;
+
+		_viewport.BeginMaterialBrush( session );
+		_materialBrushBar.Bind( session );
+		_materialBrushBar.SetMaterial( _materialsPanel?.SelectedMaterial );
+
+		SetPrompt( string.IsNullOrWhiteSpace( _materialsPanel?.SelectedMaterial )
+			? "Material brush: pick a material in the Materials browser, then drag on the model."
+			: "Material brush: drag on the model. The material comes from the Materials browser." );
+	}
+
+	private void FinishMaterialBrush()
+	{
+		if ( _viewport is null || !_viewport.IsMaterialBrushing )
+			return;
+
+		LeaveMaterialBrush();
+		ShowPaintHome();
+	}
+
+	/// <summary>
+	/// Disarm without deciding where to go next.
+	///
+	/// Split from <see cref="FinishMaterialBrush"/> because the two callers want different things:
+	/// pressing Finish means "back to the Paint home", while LeaveCurrentWorkspace is on its way
+	/// somewhere else entirely and showing the paint stages on the way would overwrite the bar the
+	/// workspace it is entering is about to set.
+	/// </summary>
+	/// <summary>The browser's selection moved. Only the bar cares — the dab reads the panel directly,
+	/// so there is no copy of the material here to keep in step.</summary>
+	private void OnBrushMaterialChanged()
+	{
+		if ( _viewport is { IsMaterialBrushing: true } )
+			_materialBrushBar?.SetMaterial( _materialsPanel?.SelectedMaterial );
+	}
+
+	private void LeaveMaterialBrush()
+	{
+		_viewport?.EndMaterialBrush();
+		_materialBrushBar?.Bind( null );
+		_materialBrushBodyId = null;
+	}
+
+	/// <summary>The material brush's stage set: one always-armed brush, the same shape the colour
+	/// brush's own stage takes.</summary>
+	private List<EffigyStage> BuildMaterialBrushStages()
+	{
+		var brush = new EffigyStage { Name = "Brush" };
+
+		brush.Add( new EffigyStageTool
+		{
+			Icon = EffigyIcon.FaceMaterial,
+			Label = "Material",
+			Tip = "Material brush — drag on the model to lay the selected material down",
+			Checkable = true,
+			Checked = true,
+		} );
+
+		return new List<EffigyStage> { brush };
+	}
+
+	/// <summary>
+	/// One dab: put the browser's material on every face the ring covered.
+	///
+	/// THE BODY IS RE-RESOLVED BY ID rather than captured, because RebuildStudio below remakes every
+	/// body — the object the brush started with is stale by the second dab. The MESH the session
+	/// raycasts is deliberately not re-pointed: a material assignment changes which slot a face
+	/// carries and never its geometry, so the BVH built at the door stays true for the whole stroke,
+	/// and rebuilding it per dab would cost the drag its frame rate for nothing.
+	///
+	/// Faces already on the slot report no change, so a held brush that is not moving does not put
+	/// an undo step on the stack every frame — see MaterialDrop.Brush.
+	/// </summary>
+	private void OnMaterialDabbed( IReadOnlyList<int> faces )
+	{
+		var material = _materialsPanel?.SelectedMaterial;
+
+		if ( string.IsNullOrWhiteSpace( material ) || faces is null || faces.Count == 0 )
+			return;
+
+		var body = _studio?.Bodies.FirstOrDefault( b => b.Id == _materialBrushBodyId );
+
+		if ( body is null )
+			return;
+
+		var fresh = MaterialDrop.SlotCarrying( _studio, material ) < 0;
+
+		if ( MaterialDrop.Brush( _studio, body, faces, material, out var slot, out var released ) <= 0 )
+			return;
+
+		// Same rule the drop follows: only a slot this gesture INVENTED gets a guessed world size,
+		// so re-brushing a material never rewrites a number somebody typed.
+		if ( fresh && slot > 0 )
+			MaterialScale.SetScale( _studio, slot, EffigyMaterialSize.For( material ) );
+
+		RebuildStudio();
+
+		SetPrompt( released.Count > 0
+			? $"{MaterialFileName( material )} → slot {slot}; slot{(released.Count == 1 ? "" : "s")} "
+				+ $"{string.Join( ", ", released )} freed. Ctrl+Z puts it back."
+			: $"{MaterialFileName( material )} → slot {slot}. Ctrl+Z puts it back." );
+	}
+
+	private string _materialBrushBodyId;
 
 	private void FinishPaint()
 	{
@@ -2963,6 +3120,10 @@ public sealed partial class EffigyWindow : DockWindow, IAssetEditor
 			MaterialChanged = SetSlotMaterial,
 			MaterialActivated = SetBaseMaterial,
 			ScaleChanged = SetMaterialScale,
+
+			// So an armed brush picks up a new material the moment it is clicked in the browser,
+			// rather than needing to be left and re-entered to notice.
+			SelectedMaterialChanged = OnBrushMaterialChanged,
 		};
 
 		_rigPanel = new EffigyRigPanel( this, _studio, _viewport );

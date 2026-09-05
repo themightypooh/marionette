@@ -59,7 +59,7 @@ internal sealed partial class EffigyViewport
 	/// <summary>Whether a left click on a face is a selection rather than an answer to a dialog.
 	/// Anything else with a click of its own owns the mouse while it is armed.</summary>
 	private bool IdlePickingAllowed =>
-		!IsSketching && !IsSculpting && !IsPainting && !IsNoting
+		!IsSketching && !IsSculpting && !IsPainting && !IsMaterialBrushing && !IsNoting
 		&& !PlanePickMode && !SketchPickMode && !FacePickMode && !EdgePickMode && !BodyPickMode
 		&& !BoneToolActive && !RigMode
 		&& !_draggingOrigin && !_draggingLight && !_draggingFace;

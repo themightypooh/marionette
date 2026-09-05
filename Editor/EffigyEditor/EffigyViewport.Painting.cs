@@ -1,7 +1,8 @@
-using Editor;
+﻿using Editor;
 using Effigy;
 using Sandbox;
 using System;
+using System.Collections.Generic;
 
 namespace Marionette.EditorTools;
 
@@ -36,7 +37,10 @@ internal sealed partial class EffigyViewport
 	/// <summary>Where the brush ring is drawn this frame, or null when the cursor is off the model.</summary>
 	private MeshHit? _paintCursor;
 
-	private Widget _paintBarOverlay;
+	/// <summary>The floating bars that belong to a brush — the colour one and the material one.
+	/// A list rather than a field because there are two now and both have to be kept off the
+	/// canvas hit test: a click meant for a control must never also land a dab.</summary>
+	private readonly List<Widget> _paintBarOverlays = new();
 
 	private bool _paintPreviewStale;
 
@@ -46,7 +50,7 @@ internal sealed partial class EffigyViewport
 
 	public void AddPaintOverlay( Widget bar )
 	{
-		_paintBarOverlay = bar;
+		_paintBarOverlays.Add( bar );
 		bar.Position = OverlayMargin + new Vector2( 0f, 46f );
 		bar.Visible = false;
 	}

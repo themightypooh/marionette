@@ -204,6 +204,12 @@ public sealed partial class EffigyWindow
 		if ( _viewport.IsPainting )
 			FinishPaint();
 
+		// The material brush has no feature and no session to commit, so leaving it is only a
+		// matter of disarming it - but it MUST be disarmed, or the ring keeps taking clicks in
+		// whatever workspace you switched to.
+		if ( _viewport.IsMaterialBrushing )
+			LeaveMaterialBrush();
+
 		_rigPanel?.CancelBoneTool();
 
 		// The rig bar is the one mode with nothing to finish — no feature, no session, just a stage

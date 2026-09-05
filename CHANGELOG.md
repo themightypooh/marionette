@@ -36,6 +36,17 @@ forgotten.
 ## Unreleased
 
 ### Added
+- A **material brush**. Press Material in the Paint workspace and drag on the model to
+  lay a material onto faces, instead of picking them one at a time. The material is
+  whatever is selected in the Materials browser, which the Paint workspace already opens
+  -- click one there, brush it on, click another and keep going without leaving the model.
+  `MaterialBrushSession.cs`, `EffigyViewport.MaterialBrush.cs`
+- The brush outlines the faces it is about to take, because a material belongs to a whole
+  face: on a coarse box a small ring still paints an entire side. Subdivide first if you
+  want the edge to follow the brush.
+- It makes the same edit dropping a material makes, so one Ctrl+Z is one dab, the slot is
+  reused rather than multiplied, and a slot the brush swept the last face off is retired
+  instead of being left named on nothing.
 - Paint can cover instead of tinting. A **Blend** dropdown on the paint bar, beside the
   colour, radius and strength: **Tint** multiplies the paint into the material underneath
   so the surface shows through, **Replace** paints onto white so what you brushed is the

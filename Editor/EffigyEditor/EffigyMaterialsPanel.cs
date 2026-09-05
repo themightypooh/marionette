@@ -675,9 +675,30 @@ internal sealed class EffigyMaterialsPanel : Widget, AssetSystem.IEventListener
 
 	// --- the footer -------------------------------------------------------------------------------
 
+	/// <summary>
+	/// The material the list has highlighted, or null when the selection is a folder or nothing.
+	///
+	/// EXPOSED FOR THE MATERIAL BRUSH, which has no picker of its own on purpose: this panel is
+	/// already open in the Paint workspace and already the place materials are chosen, so a second
+	/// control naming one would be two answers to the same question. Click here, brush there.
+	/// </summary>
+	public string SelectedMaterial { get; private set; }
+
+	/// <summary>Raised when <see cref="SelectedMaterial"/> changes, so a brush already armed can
+	/// pick up the new material without being re-entered.</summary>
+	public Action SelectedMaterialChanged { get; set; }
+
 	private void ShowItem( object item )
 	{
 		ShowScaleFor( item );
+
+		var chosen = (item as AssetEntry)?.Asset?.RelativePath;
+
+		if ( chosen != SelectedMaterial )
+		{
+			SelectedMaterial = chosen;
+			SelectedMaterialChanged?.Invoke();
+		}
 
 		if ( !_status.IsValid() )
 			return;

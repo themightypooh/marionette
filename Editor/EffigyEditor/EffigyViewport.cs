@@ -1361,7 +1361,7 @@ internal sealed partial class EffigyViewport : Widget
 
 		var overAnyOverlay = (_resultOverlay?.IsUnderMouse ?? false)
 			|| (_sculptBarOverlay?.IsUnderMouse ?? false)
-			|| (_paintBarOverlay?.IsUnderMouse ?? false);
+			|| _paintBarOverlays.Any( b => b.IsValid() && b.IsUnderMouse );
 		var overCanvas = _canvas.IsUnderMouse && !overAnyOverlay;
 
 		_gizmoInstance.Input.IsHovered = IsActiveWindow && overCanvas;
@@ -1411,6 +1411,7 @@ internal sealed partial class EffigyViewport : Widget
 		SketchFrame();
 		SculptFrame();
 		PaintFrame();
+		MaterialBrushFrame();
 
 		// AFTER the pick passes and after sculpting, so a note is drawn over everything it is about
 		// and an erase click is resolved against a hover the other modes have already declined.
@@ -1464,7 +1465,7 @@ internal sealed partial class EffigyViewport : Widget
 		// pick mode already gets from Gizmo.HasHovered/_hoveredSketchId/_hoveredFaceBodyId. Without
 		// it, placing a bone or assigning a body was the only click-to-act mode in the whole tool
 		// that left the cursor a plain arrow the entire time.
-		Cursor = Gizmo.HasHovered || IsSketching || IsPainting || _hoveredSketchId is not null || _hoveredFaceBodyId is not null
+		Cursor = Gizmo.HasHovered || IsSketching || IsPainting || IsMaterialBrushing || _hoveredSketchId is not null || _hoveredFaceBodyId is not null
 			|| BoneToolActive || BodyPickMode || FacePickMode || EdgePickMode
 			? CursorShape.Finger : CursorShape.Arrow;
 	}

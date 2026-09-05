@@ -111,7 +111,7 @@ internal sealed partial class EffigyViewport
 			return;
 		}
 
-		if ( (IsSketching || IsSculpting || IsPainting || IsNoting || BoneToolActive) && !_draggingFace )
+		if ( (IsSketching || IsSculpting || IsPainting || IsMaterialBrushing || IsNoting || BoneToolActive) && !_draggingFace )
 		{
 			EndFaceDrag();
 			return;
