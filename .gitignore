@@ -112,3 +112,8 @@ Assets/test/
 # scratch assets above: kept on disk because reopening one is useful, kept out of the
 # repo because git add -A in tools/ship.sh would push them into the package.
 Assets/untitled.*
+
+# Packages pulled in through the editor's library manager. They are somebody else's
+# code, they are restored by the editor rather than by us, and notpointless.chomnr_mcp
+# alone is a megabyte of docs and images.
+Libraries/
